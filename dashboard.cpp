@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QSqlQueryModel>
 #include <QTableWidget>
+#include "dialog.h"
 
 
 // PURPOSE: default constructor
@@ -22,6 +23,8 @@ dashboard::dashboard(QWidget *parent) :
     myconn.openConn();
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
     displayResults(ui->eventsview, "SELECT * FROM innodb.EVENTS");
+
+    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(on_addevents_clicked()));
 }
 
 // PURPOSE: deconstructor
@@ -69,3 +72,13 @@ void dashboard::on_addevents_clicked()
     h.setModal(true);
     h.exec();
 }
+
+
+/*
+ * void dashboard::on_eventsview_doubleClicked(const QModelIndex &index) {
+    //Grab the data from the event table view and convert to index to string.
+    QString val=ui->eventsview->model()->data(index).toString();
+
+
+}
+*/
