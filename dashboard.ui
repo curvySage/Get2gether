@@ -67,9 +67,9 @@
   <widget class="QTableView" name="eventsview">
    <property name="geometry">
     <rect>
-     <x>40</x>
+     <x>320</x>
      <y>450</y>
-     <width>831</width>
+     <width>551</width>
      <height>151</height>
     </rect>
    </property>
@@ -77,10 +77,10 @@
   <widget class="QPushButton" name="addevents">
    <property name="geometry">
     <rect>
-     <x>440</x>
-     <y>610</y>
-     <width>121</width>
-     <height>41</height>
+     <x>460</x>
+     <y>620</y>
+     <width>111</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
@@ -90,10 +90,10 @@
   <widget class="QPushButton" name="loadevents">
    <property name="geometry">
     <rect>
-     <x>310</x>
-     <y>610</y>
-     <width>121</width>
-     <height>41</height>
+     <x>340</x>
+     <y>620</y>
+     <width>111</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
@@ -103,7 +103,7 @@
   <widget class="QLabel" name="eventlabel">
    <property name="geometry">
     <rect>
-     <x>410</x>
+     <x>580</x>
      <y>420</y>
      <width>61</width>
      <height>21</height>
@@ -147,6 +147,32 @@
    </property>
    <property name="text">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;User&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="editEvents">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>620</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Edit Event</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="deleteEvents">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>620</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Delete Event</string>
    </property>
   </widget>
  </widget>

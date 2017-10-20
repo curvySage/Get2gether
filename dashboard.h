@@ -27,6 +27,12 @@ private slots:
     void on_loadonline_clicked();
     void on_loadevents_clicked();
     void on_addevents_clicked();
+   // void on_deleteEvents_clicked();
+    //void on_editEvents_clicked();
+
+    //void on_eventsview_activated(const QModelIndex &index);
+
+    //void on_eventsview_doubleClicked(const QModelIndex &index);
 
 private:
     Ui::dashboard *ui;
