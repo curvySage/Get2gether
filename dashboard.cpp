@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QSqlQueryModel>
 #include <QTableWidget>
+#include "dialog.h"
 
 
 // PURPOSE: default constructor
@@ -22,6 +23,8 @@ dashboard::dashboard(QWidget *parent) :
     myconn.openConn();
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
     displayResults(ui->eventsview, "SELECT * FROM innodb.EVENTS");
+
+    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(on_addevents_clicked()));
 }
 
 // PURPOSE: deconstructor

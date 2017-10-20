@@ -28,6 +28,7 @@ private slots:
     void on_loadevents_clicked();
     void on_addevents_clicked();
 
+
 private:
     Ui::dashboard *ui;
 };
