@@ -7,6 +7,10 @@
 #include <QSqlError>
 #include <QSqlQueryModel>
 #include <QTableWidget>
+#include <QDateTime>
+#include <QTimeEdit>
+#include <QVariant>
+#include "dialog.h"
 
 
 // PURPOSE: default constructor
@@ -22,6 +26,8 @@ dashboard::dashboard(QWidget *parent) :
     myconn.openConn();
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
     displayResults(ui->eventsview, "SELECT * FROM innodb.EVENTS");
+
+    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(on_addevents_clicked()));
 }
 
 // PURPOSE: deconstructor
@@ -68,4 +74,32 @@ void dashboard::on_addevents_clicked()
     h.setUser(myuser);
     h.setModal(true);
     h.exec();
+}
+
+
+void dashboard::on_eventsview_activated(const QModelIndex &index)
+{
+   QString val=ui->eventsview->model()->data(index).toString();
+
+   QSqlQuery selectQry;
+   selectQry.prepare("SELECT * FROM innodb.EVENTS WHERE ID='"+val+"'");
+   //Display the information into the Left field boxes.
+   if(selectQry.exec()){
+       while(selectQry.next()){
+           ui->NametxtEdit->setText(selectQry.value(5).toString());
+           ui->DescriptxtEdit->setText(selectQry.value(2).toString());
+           //Trying to figure out this guy
+           QString DateStr = selectQry.value(2).toString();
+           QDate Date;
+           Date.fromString(DateStr, "ddd' 'MMM' 'dd' 'yyyy'").toString("M/d/yyyy");
+           ui->dateEdit->setDate(Date);
+           //Another solution is to just
+           //ui->dateEdit_txt->setText(selectQry.value(2);
+           ui->StartEdit->setTime(selectQry.value(3).toTime());
+           ui->EndEdit->setTime(selectQry.value(4).toTime());
+       }
+   }
+   else {
+       QMessageBox::critical(this,tr("error::"),selectQry.lastError().text());
+   }
 }
