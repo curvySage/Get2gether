@@ -72,3 +72,55 @@ void dashboard::on_addevents_clicked()
     h.setModal(true);
     h.exec();
 }
+
+//Purpose: When the user selected an row from the events table, the information will be displayed on the left for the user to edit.
+void dashboard::on_eventsview_activated(const QModelIndex &index)
+{
+   QString val=ui->eventsview->model()->data(index).toString();
+
+   QSqlQuery selectQry;
+   selectQry.prepare("SELECT * FROM innodb.EVENTS WHERE ID='"+val+"'");
+   //Display the information into the Left field boxes.
+   if(selectQry.exec()){
+       while(selectQry.next()){
+           ui->NameDisplay->setText(selectQry.value(5).toString());
+           ui->DescriptxtEdit->setText(selectQry.value(2).toString());
+           ui->DateTxt->setText(selectQry.value(1).toString());
+           ui->StartTimeTxt->setText(selectQry.value(3).toString());
+           ui->EndTimeTxt->setText(selectQry.value(4).toString());
+           ui->ID_Label->setText(selectQry.value(0).toString());
+       }
+   }
+   //To
+   else {
+       QMessageBox::critical(this,tr("error::"),selectQry.lastError().text());
+   }
+}
+
+//Purpose: When the user hits the edit button, the user can update his/her information.
+void dashboard::on_editEvents_clicked()
+{
+    QString matchuser = ui->NameDisplay->text();
+    if(myuser == matchuser) {
+    QMessageBox::StandardButton choice;
+    choice = QMessageBox::question(this,"Save Changes","Are you sure you want to change?", QMessageBox::Save | QMessageBox::Cancel);
+    //If user clicks save then the information will change.
+    if(choice == QMessageBox::Save){
+        QString Editdate = ui->DateTxt->toPlainText();
+        QString Editstart = ui->StartTimeTxt->toPlainText();
+        QString Editend = ui->EndTimeTxt->toPlainText();
+        QString Editdesc = ui->DescriptxtEdit->toPlainText();
+        QString ID_Param = ui->ID_Label->text();
+        QSqlQuery query_update;
+        query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"' AND owner='"+myuser+"'");
+     }
+    }
+    //Tells the user he/she can not change other's schedules.
+    else {
+       QMessageBox MsgBox;
+       MsgBox.setText("Sorry, but you can't change other's schedules!");
+       MsgBox.exec();
+    }
+
+}
+
