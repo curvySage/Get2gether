@@ -29,6 +29,7 @@ private slots:
     void on_addevents_clicked();
 
     void on_eventsview_activated(const QModelIndex &index);
+    void on_editEvents_clicked();
 
 private:
     Ui::dashboard *ui;

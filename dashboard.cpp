@@ -76,7 +76,7 @@ void dashboard::on_addevents_clicked()
     h.exec();
 }
 
-
+//Purpose: When the user selected an row from the events table, the information will be displayed on the left for the user to edit.
 void dashboard::on_eventsview_activated(const QModelIndex &index)
 {
    QString val=ui->eventsview->model()->data(index).toString();
@@ -88,18 +88,33 @@ void dashboard::on_eventsview_activated(const QModelIndex &index)
        while(selectQry.next()){
            ui->NametxtEdit->setText(selectQry.value(5).toString());
            ui->DescriptxtEdit->setText(selectQry.value(2).toString());
-           //Trying to figure out this guy
-           QString DateStr = selectQry.value(2).toString();
-           QDate Date;
-           Date.fromString(DateStr, "ddd' 'MMM' 'dd' 'yyyy'").toString("M/d/yyyy");
-           ui->dateEdit->setDate(Date);
-           //Another solution is to just
-           //ui->dateEdit_txt->setText(selectQry.value(2);
-           ui->StartEdit->setTime(selectQry.value(3).toTime());
-           ui->EndEdit->setTime(selectQry.value(4).toTime());
+           ui->DateTxt->setText(selectQry.value(1).toString());
+           ui->StartTimeTxt->setText(selectQry.value(3).toString());
+           ui->EndTimeTxt->setText(selectQry.value(4).toString());
+           ui->ID_Label->setText(selectQry.value(0).toString());
        }
    }
+   //To
    else {
        QMessageBox::critical(this,tr("error::"),selectQry.lastError().text());
    }
 }
+
+//Purpose: When the user hits the edit button, the user can update his/her information.
+void dashboard::on_editEvents_clicked()
+{
+    QMessageBox::StandardButton choice;
+    choice = QMessageBox::question(this,"Save Changes","Are you sure you want to change?", QMessageBox::Save | QMessageBox::Cancel);
+    //If user clicks save then the information will change.
+    if(choice == QMessageBox::Save){
+        QString Editdate = ui->DateTxt->toPlainText();
+        QString Editstart = ui->StartTimeTxt->toPlainText();
+        QString Editend = ui->EndTimeTxt->toPlainText();
+        QString Editdesc = ui->DescriptxtEdit->toPlainText();
+        QString ID_Param = ui->ID_Label->text();
+        QSqlQuery query_update;
+        query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"' AND owner='"+myuser+"'");
+     }
+
+}
+
