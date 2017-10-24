@@ -183,16 +183,6 @@
     <string>Information</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="NametxtEdit">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>470</y>
-     <width>161</width>
-     <height>31</height>
-    </rect>
-   </property>
-  </widget>
   <widget class="QLabel" name="DateLabel">
    <property name="geometry">
     <rect>
@@ -209,7 +199,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Date</string>
+    <string>Date:</string>
    </property>
   </widget>
   <widget class="QTextEdit" name="DescriptxtEdit">
@@ -238,7 +228,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Name</string>
+    <string>Name:</string>
    </property>
   </widget>
   <widget class="Line" name="InfoTimeLine">
@@ -265,7 +255,7 @@
     <rect>
      <x>10</x>
      <y>520</y>
-     <width>81</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
@@ -276,14 +266,14 @@
     </font>
    </property>
    <property name="text">
-    <string>Description</string>
+    <string>Description:</string>
    </property>
   </widget>
   <widget class="QLabel" name="TimeLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>590</y>
+     <y>600</y>
      <width>41</width>
      <height>21</height>
     </rect>
@@ -295,7 +285,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Time</string>
+    <string>Time:</string>
    </property>
   </widget>
   <widget class="QTextEdit" name="DateTxt">
@@ -339,6 +329,25 @@
    </property>
    <property name="text">
     <string>ID</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="NameDisplay">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>465</y>
+     <width>161</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Franklin Gothic Book</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string/>
    </property>
   </widget>
  </widget>

@@ -86,7 +86,7 @@ void dashboard::on_eventsview_activated(const QModelIndex &index)
    //Display the information into the Left field boxes.
    if(selectQry.exec()){
        while(selectQry.next()){
-           ui->NametxtEdit->setText(selectQry.value(5).toString());
+           ui->NameDisplay->setText(selectQry.value(5).toString());
            ui->DescriptxtEdit->setText(selectQry.value(2).toString());
            ui->DateTxt->setText(selectQry.value(1).toString());
            ui->StartTimeTxt->setText(selectQry.value(3).toString());
@@ -103,6 +103,8 @@ void dashboard::on_eventsview_activated(const QModelIndex &index)
 //Purpose: When the user hits the edit button, the user can update his/her information.
 void dashboard::on_editEvents_clicked()
 {
+    QString matchuser = ui->NameDisplay->text();
+    if(myuser == matchuser) {
     QMessageBox::StandardButton choice;
     choice = QMessageBox::question(this,"Save Changes","Are you sure you want to change?", QMessageBox::Save | QMessageBox::Cancel);
     //If user clicks save then the information will change.
@@ -115,6 +117,13 @@ void dashboard::on_editEvents_clicked()
         QSqlQuery query_update;
         query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"' AND owner='"+myuser+"'");
      }
+    }
+    //Tells the user he/she can not change other's schedules.
+    else {
+       QMessageBox MsgBox;
+       MsgBox.setText("Sorry, but you can't change other's schedules!");
+       MsgBox.exec();
+    }
 
 }
 
