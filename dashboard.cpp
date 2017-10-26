@@ -7,9 +7,6 @@
 #include <QSqlError>
 #include <QSqlQueryModel>
 #include <QTableWidget>
-#include <QDateTime>
-#include <QTimeEdit>
-#include <QVariant>
 #include "dialog.h"
 
 
