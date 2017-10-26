@@ -106,7 +106,7 @@ void dashboard::on_editEvents_clicked()
     QString matchuser = ui->NameDisplay->text();
     if(myuser == matchuser) {
     QMessageBox::StandardButton choice;
-    choice = QMessageBox::question(this,"Save Changes","Are you sure you want to change?", QMessageBox::Save | QMessageBox::Cancel);
+    choice = QMessageBox::warning(this,"Save Changes","Are you sure you want to change?", QMessageBox::Save | QMessageBox::Cancel);
     //If user clicks save then the information will change.
     if(choice == QMessageBox::Save){
         QString Editdate = ui->DateTxt->toPlainText();
@@ -121,9 +121,31 @@ void dashboard::on_editEvents_clicked()
     //Tells the user he/she can not change other's schedules.
     else {
        QMessageBox MsgBox;
+       MsgBox.setWindowTitle("Woah There!");
        MsgBox.setText("Sorry, but you can't change other's schedules!");
        MsgBox.exec();
     }
 
 }
 
+
+void dashboard::on_deleteEvents_clicked()
+{
+    QString matchuser = ui->NameDisplay->text();
+    if(myuser == matchuser) {
+        QMessageBox::StandardButton choice;
+        choice = QMessageBox::warning(this,"Delete Event?", "Are you sure you want to delete your event?",QMessageBox::Yes | QMessageBox::No);
+        if (choice == QMessageBox::Yes) {
+            QString ID_Param = ui->ID_Label->text();
+            QSqlQuery query_delete;
+            query_delete.exec("DELETE FROM innodb.EVENTS WHERE ID='"+ID_Param+"'");
+        }
+    }
+    //Tell the user he/she can not delete other's schedules.
+    else {
+        QMessageBox MsgBox1;
+        MsgBox1.setWindowTitle("Wait a Second!");
+        MsgBox1.setText("Sorry, but you can't delete other's schedules!");
+        MsgBox1.exec();
+    }
+}
