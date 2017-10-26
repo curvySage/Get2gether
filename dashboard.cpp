@@ -125,7 +125,7 @@ void dashboard::on_editEvents_clicked()
 
 }
 
-
+//Purpose to delete your event from the database and not other's
 void dashboard::on_deleteEvents_clicked()
 {
     QString matchuser = ui->NameDisplay->text();
