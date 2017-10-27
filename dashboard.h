@@ -33,6 +33,9 @@ private slots:
 
     void on_deleteEvents_clicked();
 
+    // updates eventsview depending on the day cell activated
+    void on_calendarcell_selected();
+
 private:
     Ui::dashboard *ui;
 };

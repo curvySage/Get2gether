@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QSqlQueryModel>
 #include <QTableWidget>
+#include <QtGui/QTextCharFormat>    // to paint cell
 #include "dialog.h"
 
 
@@ -22,9 +23,19 @@ dashboard::dashboard(QWidget *parent) :
     // when dashboard is open, events and onlinelist are automatically loaded.
     myconn.openConn();
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
-    displayResults(ui->eventsview, "SELECT * FROM innodb.EVENTS");
 
-    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(on_addevents_clicked()));
+    // @ load, load today's events in eventsview
+    on_loadevents_clicked();
+
+    // allows the user to add event when double-clicking a calendar day
+    QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));
+
+    // displays all the associated events when day is clicked
+    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(on_calendarcell_selected()));
+
+    // updates eventsview if user uses keyboard to move
+    QObject::connect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(on_calendarcell_selected()));
+
 }
 
 // PURPOSE: deconstructor
@@ -58,11 +69,13 @@ void dashboard::on_loadonline_clicked()
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
 }
 
+
 // PURPOSE: displays results from sql query when refresh is clicked for events viewtable.
 void dashboard::on_loadevents_clicked()
 {
-    displayResults(ui->eventsview, "SELECT * FROM innodb.EVENTS");
+    on_calendarcell_selected();
 }
+
 
 // PURPOSE: displays a new window to fill out event info when event add button is clicked.
 void dashboard::on_addevents_clicked()
@@ -146,3 +159,18 @@ void dashboard::on_deleteEvents_clicked()
         MsgBox1.exec();
     }
 }
+
+// Updates eventsview based on the selected event day
+void dashboard::on_calendarcell_selected()
+{
+    //QSqlQueryModel used to execute sql and traverse the results on a view table.
+    QSqlQueryModel * modal = new QSqlQueryModel();
+    QSqlQuery * query = new QSqlQuery(myconn.db);
+
+    query->prepare("SELECT * FROM innodb.EVENTS WHERE DATE ='" +ui->calendarWidget->selectedDate().toString()+ "'");
+    query->exec();
+    modal->setQuery(*query);
+    ui->eventsview->setModel(modal);
+}
+
+
