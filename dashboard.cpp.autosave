@@ -88,7 +88,7 @@ void dashboard::on_addevents_clicked()
 {
     Dialog h;
     QDate selectedDay = ui->calendarWidget->selectedDate();
-    h.setDate(selectedDay);
+    h.setDate(selectedDay); // sets date edit text to currently selected date
     h.setUser(myuser);
     h.setModal(true);
     h.exec();
