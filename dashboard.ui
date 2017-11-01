@@ -77,7 +77,7 @@
   <widget class="QPushButton" name="addevents">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>630</x>
      <y>670</y>
      <width>111</width>
      <height>31</height>
@@ -85,19 +85,6 @@
    </property>
    <property name="text">
     <string>Add Event</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="loadevents">
-   <property name="geometry">
-    <rect>
-     <x>690</x>
-     <y>670</y>
-     <width>111</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Refresh</string>
    </property>
   </widget>
   <widget class="QLabel" name="eventlabel">
@@ -152,7 +139,7 @@
   <widget class="QPushButton" name="deleteEvents">
    <property name="geometry">
     <rect>
-     <x>570</x>
+     <x>750</x>
      <y>670</y>
      <width>111</width>
      <height>31</height>

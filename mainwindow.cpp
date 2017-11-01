@@ -57,8 +57,7 @@ void MainWindow::on_login_button_clicked()
             myconn.closeConn();
             this->hide();
 
-            dashboard dash;
-            dash.setUser(myuser);
+            dashboard dash(myuser);
             dash.setModal(true);
             dash.exec();
         }
