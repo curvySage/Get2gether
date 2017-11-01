@@ -35,6 +35,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
     /*-- IF USER CLICKS/SELECTS DATE, SHOW ASSOCIATED EVENTS IN EVENTSVIEW --*/
     // displays all the associated events when day is clicked
     QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateEventsView()));
+    QObject::connect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateEventsView()));
 }
 
 // PURPOSE: deconstructor
