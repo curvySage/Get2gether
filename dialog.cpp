@@ -51,3 +51,9 @@ void Dialog::on_buttonBox_rejected()
 {
     Dialog::close();
 }
+
+//PURPOSE: sets date edit text to chosen date
+void Dialog::setDate(const QDate date)
+{
+    ui->dateEdit->setDate(date);
+}

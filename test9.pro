@@ -45,7 +45,9 @@ FORMS += \
     dashboard.ui \
     dialog.ui
 
-unix|win32: LIBS += -L$$PWD/connector/lib/opt/ -lmysqlcppconn
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/lib/release/ -lmysqlclient.18
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/lib/debug/ -lmysqlclient.18
+else:unix: LIBS += -L$$PWD/connector/lib/ -lmysqlclient.18
 
-INCLUDEPATH += $$PWD/connector/lib/opt
-DEPENDPATH += $$PWD/connector/lib/opt
+INCLUDEPATH += $$PWD/connector/include
+DEPENDPATH += $$PWD/connector/include

@@ -21,6 +21,7 @@ public:
     connection myconn;
     QString myuser;
     void setUser(QString u);
+    void setDate(QDate date);   // edits date edit text to arg date
 
 private slots:
     void on_buttonBox_accepted();
