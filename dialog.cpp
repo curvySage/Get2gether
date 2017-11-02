@@ -43,12 +43,14 @@ void Dialog::on_buttonBox_accepted()
         qDebug() << query.lastError().text();
     }
 
-   Dialog::close();
+    accepted = true;
+    Dialog::close();
 }
 
 //PURPOSE: closes add events window when cancel is clicked.
 void Dialog::on_buttonBox_rejected()
 {
+    accepted = false;
     Dialog::close();
 }
 

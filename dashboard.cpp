@@ -12,45 +12,36 @@
 
 
 // PURPOSE: default constructor
-dashboard::dashboard(QWidget *parent) :
+dashboard::dashboard(QString u, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::dashboard)
 {
     ui->setupUi(this);
 
-    ui->userlabel->setText(myuser);
+    myuser = u;
+    ui->userlabel->setText(u);
 
     // when dashboard is open, events and onlinelist are automatically loaded.
     myconn.openConn();
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
 
     /*-- ON LOAD --*/
-    on_loadpaintcells();            // change color of event days
-    on_loadevents_clicked();        // load today's events in eventsview (if any)
-
+    paintEvents();
+    updateEventsView();
 
     /*-- IF USER DOUBLE CLICKS/PRESSES ENTER, POP UP ADD EVENT DIALOG --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));
 
     /*-- IF USER CLICKS/SELECTS DATE, SHOW ASSOCIATED EVENTS IN EVENTSVIEW --*/
     // displays all the associated events when day is clicked
-    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(on_calendarcell_selected()));
-    // updates eventsview if user uses keyboard to move
-    QObject::connect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(on_calendarcell_selected()));
-
-
+    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateEventsView()));
+    QObject::connect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateEventsView()));
 }
 
 // PURPOSE: deconstructor
 dashboard::~dashboard()
 {
     delete ui;
-}
-
-// PURPOSE: used to pass in username from mainwindow.
-void dashboard::setUser(QString u)
-{
-    myuser = u;
 }
 
 // PURPOSE: executes sql command and displays the results.
@@ -75,23 +66,22 @@ void dashboard::on_loadonline_clicked()
 }
 
 
-// PURPOSE: Refereshes eventsview and colored calendar days
-void dashboard::on_loadevents_clicked()
-{
-    on_calendarcell_selected();
-    on_loadpaintcells();
-}
-
-
 // PURPOSE: displays a new window to fill out event info when event add button is clicked.
 void dashboard::on_addevents_clicked()
 {
     Dialog h;
     QDate selectedDay = ui->calendarWidget->selectedDate();
-    h.setDate(selectedDay);
+    h.setDate(selectedDay); // sets date edit text to currently selected date
     h.setUser(myuser);
     h.setModal(true);
     h.exec();
+
+    // to avoid refresh, paint automatically and load event
+    if(h.accepted)
+    {
+        paint(selectedDay, Qt::green);
+        updateEventsView();
+    }
 }
 
 //Purpose: When the user selected an row from the events table, the information will be displayed on the left for the user to edit.
@@ -156,7 +146,12 @@ void dashboard::on_deleteEvents_clicked()
         if (choice == QMessageBox::Yes) {
             QString ID_Param = ui->ID_Label->text();
             QSqlQuery query_delete;
+            QDate currDate = ui->calendarWidget->selectedDate();
             query_delete.exec("DELETE FROM innodb.EVENTS WHERE ID='"+ID_Param+"'");
+
+            // paint back to default color
+            paint(currDate, Qt::white);
+            updateEventsView(); // auto. refresh cell events
         }
     }
     //Tell the user he/she can not delete other's schedules.
@@ -169,13 +164,13 @@ void dashboard::on_deleteEvents_clicked()
 }
 
 // PURPOSE: Updates eventsview based on the selected event day
-void dashboard::on_calendarcell_selected()
+void dashboard::updateEventsView()
 {
     //QSqlQueryModel used to execute sql and traverse the results on a view table.
     QSqlQueryModel * modal = new QSqlQueryModel();
     QSqlQuery * query = new QSqlQuery(myconn.db);
 
-    query->prepare("SELECT * FROM innodb.EVENTS WHERE DATE ='" +ui->calendarWidget->selectedDate().toString()+ "'");
+    query->prepare("SELECT * FROM innodb.EVENTS WHERE DATE ='" +ui->calendarWidget->selectedDate().toString() + "' AND owner ='" +myuser+ "'"); //
     query->exec();
     modal->setQuery(*query);
     ui->eventsview->setModel(modal);
@@ -183,16 +178,14 @@ void dashboard::on_calendarcell_selected()
 
 // PURPOSE: changes all calendar days with an event associated with it
 //          to the color green
-void dashboard::on_loadpaintcells()
+void dashboard::paintEvents()
 {
-    QBrush brush;           // used to paint cell
-    QDate date;             // used to determine date to paint
-    QTextCharFormat cf;
+    QDate date;
     QSqlQuery *query = new QSqlQuery(myconn.db);    // used to query DB
     bool toContinue;        // used to control do-while
 
     // exec. query
-    query->prepare("SELECT DATE FROM innodb.EVENTS");
+    query->prepare("SELECT date FROM innodb.EVENTS WHERE owner ='" +myuser+ "'");
     query->exec();
     query->first();     // accesses first query result
 
@@ -200,14 +193,23 @@ void dashboard::on_loadpaintcells()
     do{
         // parse QDate from query date result
         date = QDate::fromString(query->value(0).toString(), "ddd MMM d yyyy");
-        brush.setColor( Qt::green );
-        cf = ui->calendarWidget->dateTextFormat( date );
-        cf.setBackground( brush );
-        ui->calendarWidget->setDateTextFormat( date, cf );
+
+        // paints event day green
+        paint(date, Qt::green);
 
         // determines if query is still valid
         toContinue = (query->isActive() && query->isSelect());
 
       }while(query->next());    // move to next query result
+}
 
+// used to paint specified day cell with specified color
+void dashboard::paint(QDate date, QColor color)
+{
+    QBrush brush;
+    QTextCharFormat charFormat;
+    brush.setColor(color);
+    charFormat = ui->calendarWidget->dateTextFormat(date);
+    charFormat.setBackground(brush);
+    ui->calendarWidget->setDateTextFormat(date, charFormat);
 }
