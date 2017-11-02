@@ -79,7 +79,7 @@ void dashboard::on_addevents_clicked()
     // to avoid refresh, paint automatically and load event
     if(h.accepted)
     {
-        paint(selectedDay, Qt::green);
+        paint(h.getDate(), Qt::green);
         updateEventsView();
     }
 }
@@ -146,7 +146,7 @@ void dashboard::on_deleteEvents_clicked()
         if (choice == QMessageBox::Yes) {
             QString ID_Param = ui->ID_Label->text();
             QSqlQuery query_delete;
-            QDate currDate = ui->calendarWidget->selectedDate();
+            QDate currDate = QDate::fromString(ui->DateTxt->toPlainText(), "ddd MMM d yyyy");
             query_delete.exec("DELETE FROM innodb.EVENTS WHERE ID='"+ID_Param+"'");
 
             // paint back to default color

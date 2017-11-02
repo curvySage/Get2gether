@@ -59,3 +59,9 @@ void Dialog::setDate(const QDate date)
 {
     ui->dateEdit->setDate(date);
 }
+
+//PURPOSE: returns date entered in date edit
+const QDate Dialog::getDate()
+{
+    return ui->dateEdit->date();
+}
