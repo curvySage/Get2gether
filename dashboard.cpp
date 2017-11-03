@@ -62,6 +62,67 @@ void dashboard::displayResults(QTableView * table, QString command)
     table->setModel(modal);
 }
 
+/* Purpose:         Paints specified date cell with specified color
+ * Preconditions:   minimumDate < date < maximumDate
+ *                  color is defined in Qt
+ * Postconditions:  Indicated date cell's background color is changed to specified color
+*/
+void dashboard::paint(QDate date, QColor color)
+{
+    QBrush brush;
+    QTextCharFormat charFormat;
+    brush.setColor(color);
+    charFormat = ui->calendarWidget->dateTextFormat(date);
+    charFormat.setBackground(brush);
+    ui->calendarWidget->setDateTextFormat(date, charFormat);
+}
+
+/* Purpose:         Updates eventsview to display current date's events owned
+ *                  by current user
+ * Postconditions:  Query results are displayed in eventsview
+*/
+// PURPOSE: Updates eventsview based on the selected event day
+void dashboard::updateEventsView()
+{
+    displayResults(ui->eventsview, "SELECT * FROM innodb.USER_EVENTS, innodb.EVENTS WHERE eventID = ID AND username ='" +myuser+ "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
+}
+
+/* Purpose:         Paints all cells with events in database green
+ * Postconditions:  Calendar cells with associated events are green
+*/
+void dashboard::paintEvents()
+{
+    QDate date;
+    QSqlQuery *query = new QSqlQuery(myconn.db);    // used to query DB
+
+    // Execute query
+    query->prepare("SELECT date FROM innodb.EVENTS, innodb.USER_EVENTS WHERE eventID = ID AND username ='" +myuser+ "'");       // returns events
+    query->exec();
+    query->first();     // accesses first query result
+
+    /* Paint every cell with an associated event
+     * until end of query
+    */
+    do{
+        date = QDate::fromString(query->value(0).toString(), "ddd MMM d yyyy"); // parse query to identify date
+        paint(date, Qt::green);                                                 // paint parsed date cell green
+      }while(query->next());                                                    // move to next query result
+}
+
+/* Purpose:         Replaces event info details with default values
+ * Postconditions:  Text fields are blank, date value resetted to 01/01/00,
+ *                  time fields reset to 12AM
+*/
+void dashboard::clearEditInfo()
+{
+    ui->NameDisplay->clear();
+    ui->DescriptxtEdit->clear();
+    ui->dateEdit->setDate(QDate(2000, 1, 1));
+    ui->startTime->setTime(QTime(0, 0, 0, 0));
+    ui->endTime->setTime(QTime(0, 0, 0, 0));
+    ui->ID_Label->clear();
+}
+
 /* Purpose:         Refreshes online view showing users online
  * Postconditions:  Results of db query of online users are displayed in onlineview table
 */
@@ -154,17 +215,26 @@ void dashboard::on_editEvents_clicked()
             QString Editend = ui->endTime->text();
             QString Editdesc = ui->DescriptxtEdit->toPlainText();
             QString ID_Param = ui->ID_Label->text();
-            QSqlQuery query_update;
+            QSqlQuery query_update, query_count;
             query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"' AND owner='"+myuser+"'");
+            query_count.exec("SELECT COUNT(*) FROM innodb.EVENTS WHERE date = '" +originalDate.toString()+ "'");
 
             updateEventsView();     // Update eventsview with newly modified event
 
             QDate modifyDate = ui->dateEdit->date();
 
+            /*  eventCount =
+             *  SELECT COUNT(*)
+             *  FROM innodb.EVENTS
+             *
+             */
             // Bandaid: if there's > 1 event on original date, it will
             //          still paint original date white (not desired)
             if (originalDate != modifyDate)
             {
+                // if eventCount == 0
+                //      paint originalDate white
+                // paint modifyDate green
                 paint(originalDate, Qt::white);
                 paint(modifyDate, Qt::green);
             }
@@ -204,6 +274,7 @@ void dashboard::on_deleteEvents_clicked()
             QSqlQuery query_delete;
             QDate currDate = ui->dateEdit->date();
             query_delete.exec("DELETE FROM innodb.EVENTS WHERE ID='"+ID_Param+"'");
+            query_delete.exec("DELETE FROM innodb.USER_EVENTS WHERE eventID ='" +ID_Param+ "' AND username ='" +myuser+ "'");
 
             paint(currDate, Qt::white);     // paint back to default color
             clearEditInfo();                // clear edit info
@@ -218,60 +289,6 @@ void dashboard::on_deleteEvents_clicked()
     }
 }
 
-/* Purpose:         Updates eventsview to display current date's events
- * Postconditions:  Query results are displayed in eventsview
-*/
-// PURPOSE: Updates eventsview based on the selected event day
-void dashboard::updateEventsView()
-{
-    //QSqlQueryModel used to execute sql and traverse the results on a view table.
-    QSqlQueryModel * modal = new QSqlQueryModel();
-    QSqlQuery * query = new QSqlQuery(myconn.db);
-
-    query->prepare("SELECT * FROM innodb.EVENTS WHERE DATE ='" +ui->calendarWidget->selectedDate().toString() + "' AND owner ='" +myuser+ "'"); //
-    query->exec();
-    modal->setQuery(*query);
-    ui->eventsview->setModel(modal);
-}
-
-/* Purpose:         Paints all cells with events in database green
- * Postconditions:  Calendar cells with associated events are green
-*/
-void dashboard::paintEvents()
-{
-    QDate date;
-    QSqlQuery *query = new QSqlQuery(myconn.db);    // used to query DB
-
-    // Execute query
-    query->prepare("SELECT date FROM innodb.EVENTS WHERE owner ='" +myuser+ "'");
-    query->exec();
-    query->first();     // accesses first query result
-
-    /* Paint every cell with an associated event
-     * until end of query
-    */
-    do{
-        date = QDate::fromString(query->value(0).toString(), "ddd MMM d yyyy"); // parse query to identify date
-        paint(date, Qt::green);                                                 // paint parsed date cell green
-      }while(query->next());                                                    // move to next query result
-}
-
-/* Purpose:         Paints specified date cell with specified color
- * Preconditions:   minimumDate < date < maximumDate
- *                  color is defined in Qt
- * Postconditions:  Indicated date cell's background color is changed to specified color
-*/
-// used to paint specified day cell with specified color
-void dashboard::paint(QDate date, QColor color)
-{
-    QBrush brush;
-    QTextCharFormat charFormat;
-    brush.setColor(color);
-    charFormat = ui->calendarWidget->dateTextFormat(date);
-    charFormat.setBackground(brush);
-    ui->calendarWidget->setDateTextFormat(date, charFormat);
-}
-
 /* Purpose:         Updates eventsview and event info fields when date selected is
  *                  changed
  * Postconditions:  Updates eventsview to selected dates relevant events
@@ -284,20 +301,6 @@ void dashboard::on_calendarWidget_selectionChanged()
     updateEventsView();
 }
 
-/* Purpose:         Replaces event info details with default values
- * Postconditions:  Text fields are blank, date value resetted to 01/01/00,
- *                  time fields reset to 12AM
-*/
-void dashboard::clearEditInfo()
-{
-    ui->NameDisplay->clear();
-    ui->DescriptxtEdit->clear();
-    ui->dateEdit->setDate(QDate(2000, 1, 1));
-    ui->startTime->setTime(QTime(0, 0, 0, 0));
-    ui->endTime->setTime(QTime(0, 0, 0, 0));
-    ui->ID_Label->clear();
-}
-
 /* Purpose:         Displays group members of group clicked in groups view
  * Postconditions:  Query is determined by group clicked; results of query
  *                  populate membersview
@@ -307,3 +310,5 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
     QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
     displayResults(ui->membersview, "SELECT username FROM innodb.USERS, innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.USERS.ID = innodb.GROUP_MEMBERS.userID AND innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
 }
+
+
