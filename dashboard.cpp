@@ -8,6 +8,7 @@
 #include <QtGui/QTextCharFormat>
 
 #include "dialog.h"
+#include "grouppopup.h"
 #include "ui_dashboard.h"
 #include "dashboard.h"
 
@@ -28,7 +29,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
 
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
-    displayResults(ui->groupsview, "SELECT ID, name FROM innodb.GROUPS");                           // populate associated groups
+    displayResults(ui->groupsview, "SELECT innodb.GROUPS.ID AS \"Group ID\", name AS \"Group Name\" FROM innodb.GROUPS, innodb.GROUP_MEMBERS, innodb.USERS WHERE innodb.GROUPS.ID = groupID AND innodb.USERS.ID = userID AND username = '" +myuser+ "'");                           // populate associated groups
     paintEvents();          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
 
@@ -328,6 +329,17 @@ void dashboard::on_calendarWidget_selectionChanged()
 void dashboard::on_groupsview_clicked(const QModelIndex &index)
 {
     QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
-    displayResults(ui->membersview, "SELECT username FROM innodb.USERS, innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.USERS.ID = innodb.GROUP_MEMBERS.userID AND innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
+    displayResults(ui->membersview, "SELECT username AS \"Members\""
+                                    " FROM innodb.USERS, innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.USERS.ID = innodb.GROUP_MEMBERS.userID AND innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
 }
 
+/* Purpose:         Creates new Create Group form when Create Group button
+ *                  is clicked
+ * Postconditions:  New Create Group dialog pops up when Create Group clicked
+*/
+void dashboard::on_createGroup_clicked()
+{
+    GroupPopUp createGroup;
+    createGroup.setModal(true);
+    createGroup.exec();
+}

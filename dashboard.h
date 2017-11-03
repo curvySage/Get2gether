@@ -36,6 +36,8 @@ private slots:
     void on_calendarWidget_selectionChanged();
     void on_groupsview_clicked(const QModelIndex &index);
 
+    void on_createGroup_clicked();
+
 private:
     Ui::dashboard *ui;
 };
