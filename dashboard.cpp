@@ -29,9 +29,9 @@ dashboard::dashboard(QString u, QWidget *parent) :
 
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
-    displayResults(ui->groupsview, "SELECT innodb.GROUPS.ID AS \"Group ID\", name AS \"Group Name\" FROM innodb.GROUPS, innodb.GROUP_MEMBERS, innodb.USERS WHERE innodb.GROUPS.ID = groupID AND innodb.USERS.ID = userID AND username = '" +myuser+ "'");                           // populate associated groups
     paintEvents();          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
+    updateGroupsView();
 
     /*-- Signals & Slots --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
@@ -88,6 +88,11 @@ void dashboard::updateEventsView()
     displayResults(ui->eventsview, "SELECT ID AS \"Event ID\", date AS \"Date\", description AS \"Details\", start AS \"Start\", end AS \"End\" FROM innodb.USER_EVENTS, innodb.EVENTS WHERE eventID = ID AND username ='" +myuser+ "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
 }
 
+void dashboard::updateGroupsView()
+{
+    displayResults(ui->groupsview, "SELECT ID AS \"Group ID\", name AS \"Group Name\" FROM innodb.GROUPS, innodb.GROUP_MEMBERS WHERE ID = groupID AND username = '" +myuser+ "'");          // populate associated groups
+}
+
 /* Purpose:         Paints all cells with events in database green
  * Postconditions:  Calendar cells with associated events are green
 */
@@ -141,6 +146,7 @@ void dashboard::on_addevents_clicked()
     Dialog h;
     h.setDate(ui->calendarWidget->selectedDate());    // sets date edit text to currently selected date
     h.setUser(myuser);
+    h.setWindowTitle("Create New Event");
     h.setModal(true);
     h.exec();
 
@@ -329,8 +335,7 @@ void dashboard::on_calendarWidget_selectionChanged()
 void dashboard::on_groupsview_clicked(const QModelIndex &index)
 {
     QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
-    displayResults(ui->membersview, "SELECT username AS \"Members\""
-                                    " FROM innodb.USERS, innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.USERS.ID = innodb.GROUP_MEMBERS.userID AND innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
+    displayResults(ui->membersview, "SELECT username AS \"Members\" FROM innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
 }
 
 /* Purpose:         Creates new Create Group form when Create Group button
@@ -340,6 +345,14 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
 void dashboard::on_createGroup_clicked()
 {
     GroupPopUp createGroup;
+    createGroup.setUser(myuser);
     createGroup.setModal(true);
+    createGroup.setWindowTitle("Create Group");
+    createGroup.loadAddFriendsList();
     createGroup.exec();
+
+    if(createGroup.accepted)
+    {
+        updateGroupsView();
+    }
 }

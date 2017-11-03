@@ -31,6 +31,7 @@ private slots:
     void on_editEvents_clicked();
     void on_deleteEvents_clicked();
     void updateEventsView();
+    void updateGroupsView();
     void paintEvents();
     void clearEditInfo();
     void on_calendarWidget_selectionChanged();
