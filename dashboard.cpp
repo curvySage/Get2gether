@@ -84,7 +84,7 @@ void dashboard::paint(QDate date, QColor color)
 // PURPOSE: Updates eventsview based on the selected event day
 void dashboard::updateEventsView()
 {
-    displayResults(ui->eventsview, "SELECT * FROM innodb.USER_EVENTS, innodb.EVENTS WHERE eventID = ID AND username ='" +myuser+ "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
+    displayResults(ui->eventsview, "SELECT ID AS \"Event ID\", date AS \"Date\", description AS \"Details\", start AS \"Start\", end AS \"End\" FROM innodb.USER_EVENTS, innodb.EVENTS WHERE eventID = ID AND username ='" +myuser+ "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
 }
 
 /* Purpose:         Paints all cells with events in database green
@@ -171,7 +171,7 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
     */
     if(selectQry.exec()){
         while(selectQry.next()){
-            ui->NameDisplay->setText(selectQry.value(5).toString());
+            ui->NameDisplay->setText(myuser);
             ui->DescriptxtEdit->setText(selectQry.value(2).toString());
             ui->dateEdit->setDate(QDate::fromString(selectQry.value(1).toString(), "ddd MMM d yyyy"));
             ui->startTime->setTime(QTime::fromString(selectQry.value(3).toString(), "hh:mm AP"));
@@ -191,8 +191,8 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
 */
 void dashboard::on_editEvents_clicked()
 {
-    QString matchuser = ui->NameDisplay->text();    // Get event owner
-    QDate originalDate = ui->calendarWidget->selectedDate();
+    QString matchuser = ui->NameDisplay->text();                // Get event owner
+    QDate originalDate = ui->calendarWidget->selectedDate();    // To compare if date changed
 
     /* If current user matches event owner,
      *      Allow event modification
@@ -216,26 +216,32 @@ void dashboard::on_editEvents_clicked()
             QString Editdesc = ui->DescriptxtEdit->toPlainText();
             QString ID_Param = ui->ID_Label->text();
             QSqlQuery query_update, query_count;
-            query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"' AND owner='"+myuser+"'");
-            query_count.exec("SELECT COUNT(*) FROM innodb.EVENTS WHERE date = '" +originalDate.toString()+ "'");
+            int eventCount;
 
-            updateEventsView();     // Update eventsview with newly modified event
+            // Update event details
+            query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"'");
+
+            // To count today's events
+            query_count.exec("SELECT COUNT(*) FROM innodb.EVENTS, innodb.USER_EVENTS WHERE date = '" +originalDate.toString()+ "' AND ID = eventiD AND username ='" +myuser+ "'");
+            query_count.first();
+            eventCount = query_count.value(0).toInt();  // saves return value
+
+            updateEventsView();                         // Update eventsview with newly modified event
 
             QDate modifyDate = ui->dateEdit->date();
 
-            /*  eventCount =
-             *  SELECT COUNT(*)
-             *  FROM innodb.EVENTS
-             *
-             */
-            // Bandaid: if there's > 1 event on original date, it will
-            //          still paint original date white (not desired)
+            /* IF date was changed
+             *      Color cell appropriately
+            */
             if (originalDate != modifyDate)
             {
-                // if eventCount == 0
-                //      paint originalDate white
-                // paint modifyDate green
-                paint(originalDate, Qt::white);
+                /* if no more events today
+                 *      paint originalDate white
+                 * paint modifyDate green
+                 */
+                if(eventCount == 0)
+                    paint(originalDate, Qt::white);
+
                 paint(modifyDate, Qt::green);
             }
         }
@@ -271,12 +277,26 @@ void dashboard::on_deleteEvents_clicked()
         */
         if (choice == QMessageBox::Yes) {
             QString ID_Param = ui->ID_Label->text();
-            QSqlQuery query_delete;
+            QSqlQuery query_delete, query_count;
             QDate currDate = ui->dateEdit->date();
+            int eventCount;
+
+            // update EVENTS table
             query_delete.exec("DELETE FROM innodb.EVENTS WHERE ID='"+ID_Param+"'");
+            // update USER_EVENTS table
             query_delete.exec("DELETE FROM innodb.USER_EVENTS WHERE eventID ='" +ID_Param+ "' AND username ='" +myuser+ "'");
 
-            paint(currDate, Qt::white);     // paint back to default color
+            // count today's events
+            query_count.exec("SELECT COUNT(*) FROM innodb.EVENTS, innodb.USER_EVENTS WHERE date = '" +currDate.toString()+ "' AND ID = eventiD AND username ='" +myuser+ "'");
+            query_count.first();
+            eventCount = query_count.value(0).toInt();
+
+            /* If today has no more events
+             *    Paint today's cell white
+            */
+            if(eventCount == 0)
+                paint(currDate, Qt::white);     // paint back to default color
+
             clearEditInfo();                // clear edit info
             updateEventsView();             // update eventsview with removed event
         }
@@ -310,5 +330,4 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
     QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
     displayResults(ui->membersview, "SELECT username FROM innodb.USERS, innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.USERS.ID = innodb.GROUP_MEMBERS.userID AND innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
 }
-
 

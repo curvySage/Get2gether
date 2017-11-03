@@ -32,11 +32,13 @@ void Dialog::on_buttonBox_accepted()
     QString mystart = ui->start->text();
     QString myend = ui->end->text();
     QString mydesc = ui->description->toPlainText();
-
     QSqlQuery query;
+    QString result;
+
+    // Add new event into EVENTS table
     query.exec("INSERT INTO innodb.EVENTS (date, start, end, description) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"')");
 
-    QString result;
+    // Get newly created eventID and add new entry into USER_EVENTS
     result = getNewEventID();
     query.exec("INSERT INTO innodb.USER_EVENTS(username, eventID) VALUES ('" +myuser+ "','" +result+ "')");
 
@@ -70,6 +72,7 @@ const QDate Dialog::getDate()
     return ui->dateEdit->date();
 }
 
+//PURPOSE: returns newly created event ID
 QString Dialog::getNewEventID()
 {
     QSqlQuery *query = new QSqlQuery(myconn.db);
