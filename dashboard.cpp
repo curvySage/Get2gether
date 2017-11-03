@@ -1,5 +1,3 @@
-#include "dashboard.h"
-#include "ui_dashboard.h"
 #include <connection.h>
 #include <QMessageBox>
 #include <QSqlQuery>
@@ -7,44 +5,51 @@
 #include <QSqlError>
 #include <QSqlQueryModel>
 #include <QTableWidget>
-#include <QtGui/QTextCharFormat>            // used to paint cell
+#include <QtGui/QTextCharFormat>
+
 #include "dialog.h"
+#include "ui_dashboard.h"
+#include "dashboard.h"
 
 
-// PURPOSE: default constructor
+/* Purpose:         Full constructor
+ * Postconditions:  Creates main dashboard ui for current user
+*/
 dashboard::dashboard(QString u, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::dashboard)
 {
     ui->setupUi(this);
+    ui->calendarWidget->setGridVisible(true);           // creates calendar borders
+    myuser = u;                                         // set user
+    ui->userlabel->setText(u);                          // set user dashboard label
 
-    myuser = u;
-    ui->userlabel->setText(u);
+    myconn.openConn();  // connect to database
 
-    // when dashboard is open, events and onlinelist are automatically loaded.
-    myconn.openConn();
-    displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
+    /*-- On Load --*/
+    displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
+    displayResults(ui->groupsview, "SELECT ID, name FROM innodb.GROUPS");                           // populate associated groups
+    paintEvents();          // paint calendar cells with events
+    updateEventsView();     // load calendar events for curr. selected date
 
-    /*-- ON LOAD --*/
-    paintEvents();
-    updateEventsView();
-
-    /*-- IF USER DOUBLE CLICKS/PRESSES ENTER, POP UP ADD EVENT DIALOG --*/
-    QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));
-
-    /*-- IF USER CLICKS/SELECTS DATE, SHOW ASSOCIATED EVENTS IN EVENTSVIEW --*/
-    // displays all the associated events when day is clicked
-    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateEventsView()));
-    QObject::connect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateEventsView()));
+    /*-- Signals & Slots --*/
+    QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
+    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateEventsView()));           // update eventsview for selected date
 }
 
-// PURPOSE: deconstructor
+/* Purpose:         Default destructor
+ * Postconditions:  Destroys dashboard ui
+*/
 dashboard::~dashboard()
 {
     delete ui;
 }
 
-// PURPOSE: executes sql command and displays the results.
+/* Purpose:         Displays results of specified query in specified table view
+ * Preconditions:   command is a valid SQL query
+ *                  command is a relevant query for database: innodb
+ * Postconditions:  Query results are inserted into table
+*/
 void dashboard::displayResults(QTableView * table, QString command)
 {
     //QSqlQueryModel used to execute sql and traverse the results on a view table.
@@ -57,77 +62,116 @@ void dashboard::displayResults(QTableView * table, QString command)
     table->setModel(modal);
 }
 
-// PURPOSE: displays results from sql query when refresh is clicked for online viewtable.
-// CURRENT STATUS: need to click refresh to update calendar for deleted days
-//                 and to refresh eventsview
+/* Purpose:         Refreshes online view showing users online
+ * Postconditions:  Results of db query of online users are displayed in onlineview table
+*/
 void dashboard::on_loadonline_clicked()
 {
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
 }
 
-
-// PURPOSE: displays a new window to fill out event info when event add button is clicked.
+/* Purpose:         Displays new even form used to create events
+ * Postocondtions:  New event is created owned by this user and is immediately
+ *                  stored in database
+*/
 void dashboard::on_addevents_clicked()
 {
     Dialog h;
-    QDate selectedDay = ui->calendarWidget->selectedDate();
-    h.setDate(selectedDay); // sets date edit text to currently selected date
+    h.setDate(ui->calendarWidget->selectedDate());    // sets date edit text to currently selected date
     h.setUser(myuser);
     h.setModal(true);
     h.exec();
 
-    // to avoid refresh, paint automatically and load event
+    /* If user creates event,
+     *      Paint relevant cell green
+     *      Update eventsview to show new event
+    */
     if(h.accepted)
     {
-        paint(selectedDay, Qt::green);
+        paint(h.getDate(), Qt::green);
         updateEventsView();
     }
 }
 
-//Purpose: When the user selected an row from the events table, the information will be displayed on the left for the user to edit.
-void dashboard::on_eventsview_activated(const QModelIndex &index)
+/* Purpose:         Initializes event information form when user clicks
+ *                  an event in eventsview
+ * Postconditions:  Event info filled is determined by event values
+ *                  stored in database
+*/
+void dashboard::on_eventsview_clicked(const QModelIndex &index)
 {
-   QString val=ui->eventsview->model()->data(index).toString();
+    QString val=ui->eventsview->model()->data(index).toString();            // Grab value user clicked in eventsview
 
-   QSqlQuery selectQry;
-   selectQry.prepare("SELECT * FROM innodb.EVENTS WHERE ID='"+val+"'");
-   //Display the information into the Left field boxes.
-   if(selectQry.exec()){
-       while(selectQry.next()){
-           ui->NameDisplay->setText(selectQry.value(5).toString());
-           ui->DescriptxtEdit->setText(selectQry.value(2).toString());
-           ui->DateTxt->setText(selectQry.value(1).toString());
-           ui->StartTimeTxt->setText(selectQry.value(3).toString());
-           ui->EndTimeTxt->setText(selectQry.value(4).toString());
-           ui->ID_Label->setText(selectQry.value(0).toString());
-       }
-   }
-   //To
-   else {
-       QMessageBox::critical(this,tr("error::"),selectQry.lastError().text());
-   }
+    QSqlQuery selectQry;
+    selectQry.prepare("SELECT * FROM innodb.EVENTS WHERE ID='"+val+"'");
+
+    /* If query executes,
+     *      Initialize info text fields with relevant data
+    */
+    if(selectQry.exec()){
+        while(selectQry.next()){
+            ui->NameDisplay->setText(selectQry.value(5).toString());
+            ui->DescriptxtEdit->setText(selectQry.value(2).toString());
+            ui->dateEdit->setDate(QDate::fromString(selectQry.value(1).toString(), "ddd MMM d yyyy"));
+            ui->startTime->setTime(QTime::fromString(selectQry.value(3).toString(), "hh:mm AP"));
+            ui->endTime->setTime(QTime::fromString(selectQry.value(4).toString(), "hh:mm AP"));
+            ui->ID_Label->setText(selectQry.value(0).toString());
+        }
+    }
+    //To
+    else {
+        QMessageBox::critical(this,tr("error::"),selectQry.lastError().text());
+    }
 }
 
-//Purpose: When the user hits the edit button, the user can update his/her information.
+/* Purpose:         Updates event information with user defined values in
+ *                  event info text fields
+ * Postconditions:  Event is modified and replaced in database
+*/
 void dashboard::on_editEvents_clicked()
 {
-    QString matchuser = ui->NameDisplay->text();
-    if(myuser == matchuser) {
-    QMessageBox::StandardButton choice;
-    choice = QMessageBox::warning(this,"Save Changes","Are you sure you want to change?", QMessageBox::Save | QMessageBox::Cancel);
-    //If user clicks save then the information will change.
-    if(choice == QMessageBox::Save){
-        QString Editdate = ui->DateTxt->toPlainText();
-        QString Editstart = ui->StartTimeTxt->toPlainText();
-        QString Editend = ui->EndTimeTxt->toPlainText();
-        QString Editdesc = ui->DescriptxtEdit->toPlainText();
-        QString ID_Param = ui->ID_Label->text();
-        QSqlQuery query_update;
-        query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"' AND owner='"+myuser+"'");
-     }
+    QString matchuser = ui->NameDisplay->text();    // Get event owner
+    QDate originalDate = ui->calendarWidget->selectedDate();
+
+    /* If current user matches event owner,
+     *      Allow event modification
+     * Else
+     *      Print error: unauthorized to delete event
+    */
+    if(myuser == matchuser)
+    {
+        QMessageBox::StandardButton choice;
+        choice = QMessageBox::warning(this,"Save Changes","Are you sure you want to change?", QMessageBox::Save | QMessageBox::Cancel);
+
+        /* If user indicates "Save",
+         *      Replace existing data in database with indicated data in event
+         *      details text fields
+        */
+        if(choice == QMessageBox::Save)
+        {
+            QString Editdate = ui->dateEdit->date().toString();
+            QString Editstart = ui->startTime->text();
+            QString Editend = ui->endTime->text();
+            QString Editdesc = ui->DescriptxtEdit->toPlainText();
+            QString ID_Param = ui->ID_Label->text();
+            QSqlQuery query_update;
+            query_update.exec("UPDATE innodb.EVENTS SET date='"+Editdate+"',start='"+Editstart+"', end='"+Editend+"',description='"+Editdesc+"' WHERE ID='"+ID_Param+"' AND owner='"+myuser+"'");
+
+            updateEventsView();     // Update eventsview with newly modified event
+
+            QDate modifyDate = ui->dateEdit->date();
+
+            // Bandaid: if there's > 1 event on original date, it will
+            //          still paint original date white (not desired)
+            if (originalDate != modifyDate)
+            {
+                paint(originalDate, Qt::white);
+                paint(modifyDate, Qt::green);
+            }
+        }
     }
-    //Tells the user he/she can not change other's schedules.
-    else {
+    else
+    {
        QMessageBox MsgBox;
        MsgBox.setWindowTitle("Woah There!");
        MsgBox.setText("Sorry, but you can't change other's schedules!");
@@ -136,25 +180,36 @@ void dashboard::on_editEvents_clicked()
 
 }
 
-//Purpose to delete your event from the database and not other's
+/* Purpose:         Allows event deletion
+ * Postcondition:   Selected event is deleted from database and removed from calendar
+*/
 void dashboard::on_deleteEvents_clicked()
 {
-    QString matchuser = ui->NameDisplay->text();
+    QString matchuser = ui->NameDisplay->text();        // to compare event owner
+
+    /* If username is event owner,
+     *      Allow event deletion
+     * Else,
+     *      Print error: unauthorized deletion
+    */
     if(myuser == matchuser) {
         QMessageBox::StandardButton choice;
         choice = QMessageBox::warning(this,"Delete Event?", "Are you sure you want to delete your event?",QMessageBox::Yes | QMessageBox::No);
+
+        /* If user selects Yes,
+         *      Query database removing selected event
+        */
         if (choice == QMessageBox::Yes) {
             QString ID_Param = ui->ID_Label->text();
             QSqlQuery query_delete;
-            QDate currDate = ui->calendarWidget->selectedDate();
+            QDate currDate = ui->dateEdit->date();
             query_delete.exec("DELETE FROM innodb.EVENTS WHERE ID='"+ID_Param+"'");
 
-            // paint back to default color
-            paint(currDate, Qt::white);
-            updateEventsView(); // auto. refresh cell events
+            paint(currDate, Qt::white);     // paint back to default color
+            clearEditInfo();                // clear edit info
+            updateEventsView();             // update eventsview with removed event
         }
     }
-    //Tell the user he/she can not delete other's schedules.
     else {
         QMessageBox MsgBox1;
         MsgBox1.setWindowTitle("Wait a Second!");
@@ -163,6 +218,9 @@ void dashboard::on_deleteEvents_clicked()
     }
 }
 
+/* Purpose:         Updates eventsview to display current date's events
+ * Postconditions:  Query results are displayed in eventsview
+*/
 // PURPOSE: Updates eventsview based on the selected event day
 void dashboard::updateEventsView()
 {
@@ -176,33 +234,33 @@ void dashboard::updateEventsView()
     ui->eventsview->setModel(modal);
 }
 
-// PURPOSE: changes all calendar days with an event associated with it
-//          to the color green
+/* Purpose:         Paints all cells with events in database green
+ * Postconditions:  Calendar cells with associated events are green
+*/
 void dashboard::paintEvents()
 {
     QDate date;
     QSqlQuery *query = new QSqlQuery(myconn.db);    // used to query DB
-    bool toContinue;        // used to control do-while
 
-    // exec. query
+    // Execute query
     query->prepare("SELECT date FROM innodb.EVENTS WHERE owner ='" +myuser+ "'");
     query->exec();
     query->first();     // accesses first query result
 
-    // for every day with an event, paint different color
+    /* Paint every cell with an associated event
+     * until end of query
+    */
     do{
-        // parse QDate from query date result
-        date = QDate::fromString(query->value(0).toString(), "ddd MMM d yyyy");
-
-        // paints event day green
-        paint(date, Qt::green);
-
-        // determines if query is still valid
-        toContinue = (query->isActive() && query->isSelect());
-
-      }while(query->next());    // move to next query result
+        date = QDate::fromString(query->value(0).toString(), "ddd MMM d yyyy"); // parse query to identify date
+        paint(date, Qt::green);                                                 // paint parsed date cell green
+      }while(query->next());                                                    // move to next query result
 }
 
+/* Purpose:         Paints specified date cell with specified color
+ * Preconditions:   minimumDate < date < maximumDate
+ *                  color is defined in Qt
+ * Postconditions:  Indicated date cell's background color is changed to specified color
+*/
 // used to paint specified day cell with specified color
 void dashboard::paint(QDate date, QColor color)
 {
@@ -212,4 +270,40 @@ void dashboard::paint(QDate date, QColor color)
     charFormat = ui->calendarWidget->dateTextFormat(date);
     charFormat.setBackground(brush);
     ui->calendarWidget->setDateTextFormat(date, charFormat);
+}
+
+/* Purpose:         Updates eventsview and event info fields when date selected is
+ *                  changed
+ * Postconditions:  Updates eventsview to selected dates relevant events
+ *                  If selected date has no events, event info is reset to default values
+ *                  Else, filled with event info
+*/
+void dashboard::on_calendarWidget_selectionChanged()
+{
+    clearEditInfo();
+    updateEventsView();
+}
+
+/* Purpose:         Replaces event info details with default values
+ * Postconditions:  Text fields are blank, date value resetted to 01/01/00,
+ *                  time fields reset to 12AM
+*/
+void dashboard::clearEditInfo()
+{
+    ui->NameDisplay->clear();
+    ui->DescriptxtEdit->clear();
+    ui->dateEdit->setDate(QDate(2000, 1, 1));
+    ui->startTime->setTime(QTime(0, 0, 0, 0));
+    ui->endTime->setTime(QTime(0, 0, 0, 0));
+    ui->ID_Label->clear();
+}
+
+/* Purpose:         Displays group members of group clicked in groups view
+ * Postconditions:  Query is determined by group clicked; results of query
+ *                  populate membersview
+*/
+void dashboard::on_groupsview_clicked(const QModelIndex &index)
+{
+    QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
+    displayResults(ui->membersview, "SELECT username FROM innodb.USERS, innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.USERS.ID = innodb.GROUP_MEMBERS.userID AND innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
 }

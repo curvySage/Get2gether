@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QString>
+#include <QDate>
 #include <connection.h>
 
 namespace Ui {
@@ -25,6 +26,7 @@ public:
     QString myuser;
     void setUser(QString u);
     void setDate(QDate date);   // edits date edit text to arg date
+    const QDate getDate();      // returns date edit date
 
 private slots:
     void on_buttonBox_accepted();
