@@ -24,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent) :
     else {
         ui->status->setText("Status: Connection established! ");
     }
+
+    ui->username->setFocus();       // to set input focus to username input
  }
 
 // PURPOSE: default deconstructor, user status set to offline.

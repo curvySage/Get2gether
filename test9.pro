@@ -32,18 +32,21 @@ SOURCES += \
         mainwindow.cpp \
     dashboard.cpp \
     connection.cpp \
-    dialog.cpp
+    dialog.cpp \
+    grouppopup.cpp
 
 HEADERS += \
         mainwindow.h \
     dashboard.h \
     connection.h \
-    dialog.h
+    dialog.h \
+    grouppopup.h
 
 FORMS += \
         mainwindow.ui \
     dashboard.ui \
-    dialog.ui
+    dialog.ui \
+    grouppopup.ui
 
 unix|win32: LIBS += -L$$PWD/connector/lib/opt/ -lmysqlcppconn
 

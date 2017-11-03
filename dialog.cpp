@@ -32,9 +32,15 @@ void Dialog::on_buttonBox_accepted()
     QString mystart = ui->start->text();
     QString myend = ui->end->text();
     QString mydesc = ui->description->toPlainText();
-
     QSqlQuery query;
-    query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, owner) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', '"+myuser+"')");
+    QString result;
+
+    // Add new event into EVENTS table
+    query.exec("INSERT INTO innodb.EVENTS (date, start, end, description) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"')");
+
+    // Get newly created eventID and add new entry into USER_EVENTS
+    result = getNewEventID();
+    query.exec("INSERT INTO innodb.USER_EVENTS(username, eventID) VALUES ('" +myuser+ "','" +result+ "')");
 
     if (query.isActive()) {
         qDebug("Inserted event into database.");
@@ -58,4 +64,23 @@ void Dialog::on_buttonBox_rejected()
 void Dialog::setDate(const QDate date)
 {
     ui->dateEdit->setDate(date);
+}
+
+//PURPOSE: returns date entered in date edit
+const QDate Dialog::getDate()
+{
+    return ui->dateEdit->date();
+}
+
+//PURPOSE: returns newly created event ID
+QString Dialog::getNewEventID()
+{
+    QSqlQuery *query = new QSqlQuery(myconn.db);
+    QString result;
+    query->prepare("SELECT MAX(ID) FROM innodb.EVENTS");
+    query->exec();
+    query->first();
+
+    result = query->value(0).toString();
+    return result;
 }
