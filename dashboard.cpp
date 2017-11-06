@@ -11,6 +11,7 @@
 #include "grouppopup.h"
 #include "ui_dashboard.h"
 #include "dashboard.h"
+#include "invitations.h"
 
 
 /* Purpose:         Full constructor
@@ -355,4 +356,12 @@ void dashboard::on_createGroup_clicked()
     {
         updateGroupsView();
     }
+}
+
+void dashboard::on_invites_button_clicked()
+{
+    invitations invites(myuser);
+    invites.setModal(true);
+    invites.setWindowTitle("Invitations");
+    invites.exec();
 }

@@ -39,6 +39,8 @@ private slots:
 
     void on_createGroup_clicked();
 
+    void on_invites_button_clicked();
+
 private:
     Ui::dashboard *ui;
 };
