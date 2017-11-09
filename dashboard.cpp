@@ -11,6 +11,7 @@
 #include "grouppopup.h"
 #include "ui_dashboard.h"
 #include "dashboard.h"
+#include "invitations.h"
 
 
 /* Purpose:         Full constructor
@@ -88,6 +89,12 @@ void dashboard::updateEventsView()
     displayResults(ui->eventsview, "SELECT ID AS \"Event ID\", date AS \"Date\", description AS \"Details\", start AS \"Start\", end AS \"End\" FROM innodb.USER_EVENTS, innodb.EVENTS WHERE eventID = ID AND username ='" +myuser+ "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
 }
 
+void dashboard::updateEventsView(const QModelIndex &groupID)
+{
+    QString val=ui->groupsview->model()->data(groupID).toString();            // Grab groupID user clicked in eventsview
+    displayResults(ui->eventsview, "SELECT innodb.GROUP_MEMBERS.username AS \"Owner\", innodb.USER_EVENTS.eventID AS \"Event ID\", date AS \"Date\", start AS \"Start\", end AS \"End\" FROM innodb.GROUP_MEMBERS, innodb.USER_EVENTS, innodb.EVENTS WHERE innodb.USER_EVENTS.username = innodb.GROUP_MEMBERS.username AND innodb.USER_EVENTS.eventID = innodb.EVENTS.ID AND innodb.GROUP_MEMBERS.groupID = '" +val+ "' ORDER BY innodb.USER_EVENTS.eventID");
+}
+
 void dashboard::updateGroupsView()
 {
     displayResults(ui->groupsview, "SELECT ID AS \"Group ID\", name AS \"Group Name\" FROM innodb.GROUPS, innodb.GROUP_MEMBERS WHERE ID = groupID AND username = '" +myuser+ "'");          // populate associated groups
@@ -102,7 +109,15 @@ void dashboard::paintEvents()
     QSqlQuery *query = new QSqlQuery(myconn.db);    // used to query DB
 
     // Execute query
-    query->prepare("SELECT date FROM innodb.EVENTS, innodb.USER_EVENTS WHERE eventID = ID AND username ='" +myuser+ "'");       // returns events
+    if(isGroupMode == 0)
+    {
+        query->prepare("SELECT date FROM innodb.EVENTS, innodb.USER_EVENTS WHERE eventID = ID AND username ='" +myuser+ "'");       // returns events
+    }
+    else
+    {
+        query->prepare("SELECT date FROM innodb.EVENTS, innodb.USER_EVENTS WHERE eventID = ID AND username ='" +myuser+ "'");       // returns events
+    }
+
     query->exec();
     query->first();     // accesses first query result
 
@@ -128,6 +143,16 @@ void dashboard::clearEditInfo()
     ui->endTime->setTime(QTime(0, 0, 0, 0));
     ui->ID_Label->clear();
 }
+
+/* Purpose:         Determines group mode setting
+ * Postconditions:
+*/
+void dashboard::setMode(bool isGroup)
+{
+    isGroupMode = isGroup;
+}
+
+/* --- SLOTS --- */
 
 /* Purpose:         Refreshes online view showing users online
  * Postconditions:  Results of db query of online users are displayed in onlineview table
@@ -336,6 +361,9 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
 {
     QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
     displayResults(ui->membersview, "SELECT username AS \"Members\" FROM innodb.GROUP_MEMBERS, innodb.GROUPS WHERE innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID AND innodb.GROUPS.ID ='" +val+ "'");
+
+    // Show all group events in events
+    updateEventsView(index);
 }
 
 /* Purpose:         Creates new Create Group form when Create Group button
@@ -354,5 +382,32 @@ void dashboard::on_createGroup_clicked()
     if(createGroup.accepted)
     {
         updateGroupsView();
+    }
+}
+
+/* Purpose:
+ * Postconditions:
+*/
+void dashboard::on_invites_button_clicked()
+{
+    invitations invites(myuser);
+    invites.setModal(true);
+    invites.setWindowTitle("Invitations");
+    invites.exec();
+}
+
+/* Purpose:         Determines which mode dashboard is in:
+ *                  group or personal
+*/
+void dashboard::on_networktabs_currentChanged(int index)
+{
+    // If tab index = 0 ("Friends"), set isGroupMode false
+    if(index == 0)
+    {
+        setMode(false);
+    }
+    else
+    {
+        setMode(true);
     }
 }

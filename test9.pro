@@ -33,24 +33,27 @@ SOURCES += \
     dashboard.cpp \
     connection.cpp \
     dialog.cpp \
-    grouppopup.cpp
+    grouppopup.cpp \
+    invitations.cpp
 
 HEADERS += \
         mainwindow.h \
     dashboard.h \
     connection.h \
     dialog.h \
-    grouppopup.h
+    grouppopup.h \
+    invitations.h
 
 FORMS += \
         mainwindow.ui \
     dashboard.ui \
     dialog.ui \
-    grouppopup.ui
+    grouppopup.ui \
+    invitations.ui
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/lib/release/ -lmysqlclient.18
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/lib/debug/ -lmysqlclient.18
 else:unix: LIBS += -L$$PWD/connector/lib/ -lmysqlclient.18
 
-INCLUDEPATH += $$PWD/connector/include
-DEPENDPATH += $$PWD/connector/include
+INCLUDEPATH += $$PWD/connector
+DEPENDPATH += $$PWD/connector

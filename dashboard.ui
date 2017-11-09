@@ -337,12 +337,25 @@
     <rect>
      <x>20</x>
      <y>10</y>
-     <width>61</width>
+     <width>71</width>
      <height>32</height>
     </rect>
    </property>
    <property name="text">
     <string>Home</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="invites_button">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>10</y>
+     <width>71</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Invites</string>
    </property>
   </widget>
  </widget>

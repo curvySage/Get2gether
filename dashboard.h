@@ -18,11 +18,13 @@ class dashboard : public QDialog
 public:
     connection myconn;
     QString myuser;
+    bool isGroupMode;               // to indicate group/personal mode
 
     explicit dashboard(QString u, QWidget *parent = 0);
     ~dashboard();
     void displayResults(QTableView * table, QString);
     void paint(QDate date, QColor color);
+    void setMode(bool isGroup);
 
 private slots:
     void on_loadonline_clicked();
@@ -31,13 +33,16 @@ private slots:
     void on_editEvents_clicked();
     void on_deleteEvents_clicked();
     void updateEventsView();
+    void updateEventsView(const QModelIndex &index);
     void updateGroupsView();
     void paintEvents();
     void clearEditInfo();
     void on_calendarWidget_selectionChanged();
     void on_groupsview_clicked(const QModelIndex &index);
-
     void on_createGroup_clicked();
+    void on_invites_button_clicked();
+
+    void on_networktabs_currentChanged(int index);
 
 private:
     Ui::dashboard *ui;
