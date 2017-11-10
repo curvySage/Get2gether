@@ -89,12 +89,19 @@ void dashboard::updateEventsView()
     displayResults(ui->eventsview, "SELECT ID AS \"Event ID\", date AS \"Date\", description AS \"Details\", start AS \"Start\", end AS \"End\" FROM innodb.USER_EVENTS, innodb.EVENTS WHERE eventID = ID AND username ='" +myuser+ "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
 }
 
+/* Purpose:         Updates eventsview to display all events of each member in
+ *                  eventsviews (when you click the groupID)
+ * Postconditions:
+*/
 void dashboard::updateEventsView(const QModelIndex &groupID)
 {
     QString val=ui->groupsview->model()->data(groupID).toString();            // Grab groupID user clicked in eventsview
     displayResults(ui->eventsview, "SELECT innodb.GROUP_MEMBERS.username AS \"Owner\", innodb.USER_EVENTS.eventID AS \"Event ID\", date AS \"Date\", start AS \"Start\", end AS \"End\" FROM innodb.GROUP_MEMBERS, innodb.USER_EVENTS, innodb.EVENTS WHERE innodb.USER_EVENTS.username = innodb.GROUP_MEMBERS.username AND innodb.USER_EVENTS.eventID = innodb.EVENTS.ID AND innodb.GROUP_MEMBERS.groupID = '" +val+ "' ORDER BY innodb.USER_EVENTS.eventID");
 }
 
+/* Purpose:
+ * Postconditions:
+*/
 void dashboard::updateGroupsView()
 {
     displayResults(ui->groupsview, "SELECT ID AS \"Group ID\", name AS \"Group Name\" FROM innodb.GROUPS, innodb.GROUP_MEMBERS WHERE ID = groupID AND username = '" +myuser+ "'");          // populate associated groups
@@ -162,6 +169,23 @@ void dashboard::on_loadonline_clicked()
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");
 }
 
+bool dashboard::getMode()
+{
+    return isGroupMode;
+}
+
+void dashboard::setGroupID(const QModelIndex &groupID)
+{
+    QString val=ui->groupsview->model()->data(groupID).toString();            // Grab groupID clicked in groupsview
+
+    this->groupID = val;
+}
+
+QString dashboard::getGroupID()
+{
+    return groupID;
+}
+
 /* Purpose:         Displays new even form used to create events
  * Postocondtions:  New event is created owned by this user and is immediately
  *                  stored in database
@@ -173,6 +197,8 @@ void dashboard::on_addevents_clicked()
     h.setUser(myuser);
     h.setWindowTitle("Create New Event");
     h.setModal(true);
+    h.setMode(isGroupMode);
+    h.setGroupID(groupID);
     h.exec();
 
     /* If user creates event,
@@ -184,6 +210,8 @@ void dashboard::on_addevents_clicked()
         paint(h.getDate(), Qt::green);
         updateEventsView();
     }
+
+
 }
 
 /* Purpose:         Initializes event information form when user clicks
@@ -364,6 +392,10 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
 
     // Show all group events in events
     updateEventsView(index);
+
+    setGroupID(index);
+
+    qDebug() << isGroupMode;
 }
 
 /* Purpose:         Creates new Create Group form when Create Group button

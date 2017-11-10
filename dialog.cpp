@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QSqlError>
 #include <QPlainTextEdit>
+#include "dashboard.h"
 #include "dialog.h"
 #include "ui_dialog.h"
 
@@ -28,6 +29,7 @@ void Dialog::setUser(QString u)
 //Purpose: inserts event info to database when OK button is clicked.
 void Dialog::on_buttonBox_accepted()
 {
+    dashboard dash(myuser);
     QString mydate = ui->dateEdit->date().toString();
     QString mystart = ui->start->text();
     QString myend = ui->end->text();
@@ -35,8 +37,16 @@ void Dialog::on_buttonBox_accepted()
     QSqlQuery query;
     QString result;
 
-    // Add new event into EVENTS table
-    query.exec("INSERT INTO innodb.EVENTS (date, start, end, description) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"')");
+    if(modeSet)
+    {
+        // Add new group event into EVENTS table
+        query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, groupID) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', '" +groupID+ "')");
+    }
+    else
+    {
+        // Add new event into EVENTS table
+        query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, groupID) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', 0)");
+    }
 
     // Get newly created eventID and add new entry into USER_EVENTS
     result = getNewEventID();
@@ -83,4 +93,14 @@ QString Dialog::getNewEventID()
 
     result = query->value(0).toString();
     return result;
+}
+
+void Dialog::setMode(bool newMode)
+{
+    modeSet=newMode;
+}
+
+void Dialog::setGroupID(QString newID)
+{
+    groupID = newID;
 }

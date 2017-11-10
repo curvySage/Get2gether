@@ -17,6 +17,8 @@ class Dialog : public QDialog
 
 public:
     bool accepted;    // to indicate if accepted or rejected
+    bool modeSet;
+    QString groupID;
 
 
     explicit Dialog(QWidget *parent = 0);
@@ -28,6 +30,8 @@ public:
     void setDate(QDate date);   // edits date edit text to arg date
     const QDate getDate();      // returns date edit date
     QString getNewEventID();
+    void setMode(bool newMode);
+    void setGroupID(QString newID);
 
 private slots:
     void on_buttonBox_accepted();

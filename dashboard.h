@@ -19,12 +19,16 @@ public:
     connection myconn;
     QString myuser;
     bool isGroupMode;               // to indicate group/personal mode
+    QString groupID;
 
     explicit dashboard(QString u, QWidget *parent = 0);
     ~dashboard();
     void displayResults(QTableView * table, QString);
     void paint(QDate date, QColor color);
     void setMode(bool isGroup);
+    bool getMode();
+    void setGroupID(const QModelIndex &groupID);
+    QString getGroupID();
 
 private slots:
     void on_loadonline_clicked();
