@@ -35,8 +35,12 @@ void Dialog::on_buttonBox_accepted()
     QSqlQuery query;
     QString result;
 
+    int week = ui->dateEdit->date().weekNumber();   // get the dates week
+    int year = ui->dateEdit->date().year();         // get the dates year.
+    QString yearweek = QString::number(year) + QString::number(week);
+
     // Add new event into EVENTS table
-    query.exec("INSERT INTO innodb.EVENTS (date, start, end, description) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"')");
+    query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, yearweek) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', '"+yearweek+"'");
 
     // Get newly created eventID and add new entry into USER_EVENTS
     result = getNewEventID();

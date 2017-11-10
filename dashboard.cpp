@@ -6,6 +6,9 @@
 #include <QSqlQueryModel>
 #include <QTableWidget>
 #include <QtGui/QTextCharFormat>
+#include <QDateTime>
+#include <QDate>
+#include <QTime>
 
 #include "dialog.h"
 #include "grouppopup.h"
@@ -33,15 +36,16 @@ dashboard::dashboard(QString u, QWidget *parent) :
     MyThread *m_pRefreshThread = new MyThread(this);
     m_pRefreshThread->start();
 
-
-#if 0
+    /* Put this code in the dashboards deconstructor he said.
+     *
+     *
     m_pRefreshThread->performExit();
     while(m_pRefreshThread->isRunning())
     {
         msleep(10);
     }
     delete m_pRefreshThread;
-#endif
+    */
 
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
@@ -49,6 +53,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
     updateEventsView();     // load calendar events for curr. selected date
     updateGroupsView();
     updateBulletinsView();
+    updateRemindersView();
 
     /*-- Signals & Slots --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
@@ -60,6 +65,9 @@ dashboard::dashboard(QString u, QWidget *parent) :
 */
 dashboard::~dashboard()
 {
+    //m_pRefreshThread->performExit();
+    //delete m_pRefreshThread;
+
     delete ui;
 }
 
@@ -112,7 +120,18 @@ void dashboard::updateGroupsView()
 
 void dashboard::updateBulletinsView()
 {
+    displayResults(ui->bulletinView, "SELECT userID, message FROM innodb.BULLETINS");
+}
 
+void dashboard::updateRemindersView()
+{
+    // get the current year and week from currentDate.
+    int week = QDate::currentDate().weekNumber();
+    int year = QDate::currentDate().year();
+    QString yearweek = QString::number(year) + QString::number(week);
+
+    // return events from the same current week & year.
+    displayResults(ui->reminders, "SELECT * FROM innodb.EVENTS WHERE yearweek = '"+yearweek+"'");
 }
 
 /* Purpose:         Paints all cells with events in database green
@@ -385,4 +404,19 @@ void dashboard::on_invites_button_clicked()
     invites.setModal(true);
     invites.setWindowTitle("Invitations");
     invites.exec();
+}
+
+void dashboard::on_sendButton_clicked()
+{
+    QString message = ui->messageBox->toPlainText();
+    QString current = QDate::currentDate().toString();
+    QSqlQuery query;
+
+    query.exec("INSERT INTO innodb.BULLETINS(date, userID, message) VALUES ('"+current+"','"+myuser+"','"+message+"')");
+    if (query.isActive()) {
+        qDebug("Inserted message into database.");
+    }
+    else {
+        qDebug() << query.lastError().text();
+    }
 }

@@ -5,6 +5,10 @@
 #include <QTableView>
 #include <connection.h>
 #include <dialog.h>
+#include <QThread>
+#include <QtCore>
+#include <mythread.h>
+
 namespace Ui {
 class dashboard;
 }
@@ -23,7 +27,6 @@ public:
     ~dashboard();
     void displayResults(QTableView * table, QString);
     void paint(QDate date, QColor color);
-
 private slots:
     void on_loadonline_clicked();
     void on_addevents_clicked();
@@ -33,15 +36,14 @@ private slots:
     void updateEventsView();
     void updateGroupsView();
     void updateBulletinsView();
+    void updateRemindersView();
     void paintEvents();
     void clearEditInfo();
     void on_calendarWidget_selectionChanged();
     void on_groupsview_clicked(const QModelIndex &index);
-
     void on_createGroup_clicked();
-
     void on_invites_button_clicked();
-
+    void on_sendButton_clicked();
 private:
     Ui::dashboard *ui;
 };
