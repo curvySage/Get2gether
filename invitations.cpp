@@ -18,8 +18,6 @@ invitations::invitations(QString myuser, QWidget *parent) :
     QSqlQuery * query = new QSqlQuery(myconn.db);
 
     query->prepare("SELECT A.inviter, B.name FROM innodb.INVITES AS A, innodb.GROUPS AS B WHERE A.invitee ='"+myuser+"'AND A.groupID = B.ID");
-
-
     query->exec();
     modal->setQuery(*query);
     ui->invitesview->setModel(modal);

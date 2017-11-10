@@ -12,6 +12,7 @@
 #include "ui_dashboard.h"
 #include "dashboard.h"
 #include "invitations.h"
+#include "mythread.h"
 
 
 /* Purpose:         Full constructor
@@ -28,11 +29,26 @@ dashboard::dashboard(QString u, QWidget *parent) :
 
     myconn.openConn();  // connect to database
 
+    /*-- thread -- */
+    MyThread *m_pRefreshThread = new MyThread(this);
+    m_pRefreshThread->start();
+
+
+#if 0
+    m_pRefreshThread->performExit();
+    while(m_pRefreshThread->isRunning())
+    {
+        msleep(10);
+    }
+    delete m_pRefreshThread;
+#endif
+
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
     paintEvents();          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
     updateGroupsView();
+    updateBulletinsView();
 
     /*-- Signals & Slots --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
@@ -92,6 +108,11 @@ void dashboard::updateEventsView()
 void dashboard::updateGroupsView()
 {
     displayResults(ui->groupsview, "SELECT ID AS \"Group ID\", name AS \"Group Name\" FROM innodb.GROUPS, innodb.GROUP_MEMBERS WHERE ID = groupID AND username = '" +myuser+ "'");          // populate associated groups
+}
+
+void dashboard::updateBulletinsView()
+{
+
 }
 
 /* Purpose:         Paints all cells with events in database green

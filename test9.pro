@@ -34,7 +34,9 @@ SOURCES += \
     connection.cpp \
     dialog.cpp \
     grouppopup.cpp \
-    invitations.cpp
+    invitations.cpp \
+    mythread.cpp \
+    mythread.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -42,7 +44,9 @@ HEADERS += \
     connection.h \
     dialog.h \
     grouppopup.h \
-    invitations.h
+    invitations.h \
+    mythread.h \
+    mythread.h
 
 FORMS += \
         mainwindow.ui \
@@ -51,11 +55,9 @@ FORMS += \
     grouppopup.ui \
     invitations.ui
 
-unix|win32: LIBS += -L$$PWD/connector/lib/opt/ -lmysqlcppconn
-
-INCLUDEPATH += $$PWD/connector/lib/opt
-DEPENDPATH += $$PWD/connector/lib/opt
 
 
-INCLUDEPATH += $$PWD/connector/include
-DEPENDPATH += $$PWD/connector/include
+win32: LIBS += -L$$PWD/connector/windows/lib/opt/ -lmysqlcppconn
+
+INCLUDEPATH += $$PWD/connector/windows/lib/opt
+DEPENDPATH += $$PWD/connector/windows/lib/opt
