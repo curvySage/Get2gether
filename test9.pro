@@ -66,3 +66,6 @@ macx: LIBS += -L$$PWD/connector/mac/lib/ -lmysqlclient
 
 INCLUDEPATH += $$PWD/connector/mac/include
 DEPENDPATH += $$PWD/connector/mac/include
+
+RESOURCES += \
+    assets.qrc

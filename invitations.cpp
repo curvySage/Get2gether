@@ -7,6 +7,7 @@
 #include <QTableWidget>
 #include <QtGui/QTextCharFormat>
 
+
 invitations::invitations(QString myuser, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::invitations)

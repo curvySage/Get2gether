@@ -6,9 +6,6 @@
 #include <QSqlQueryModel>
 #include <QTableWidget>
 #include <QtGui/QTextCharFormat>
-#include <QDateTime>
-#include <QDate>
-#include <QTime>
 
 #include "dialog.h"
 #include "grouppopup.h"
@@ -28,32 +25,21 @@ dashboard::dashboard(QString u, QWidget *parent) :
     ui->setupUi(this);
     ui->calendarWidget->setGridVisible(true);           // creates calendar borders
     myuser = u;                                         // set user
-    ui->userlabel->setText(u);                          // set user dashboard label
+    ui->userlabel->setText(myuser);                     // set user dashboard label
+    myconn.openConn();                                  // connect to database
 
-    myconn.openConn();  // connect to database
-
-    /*-- thread -- */
+    /*-- Thread -- */
     MyThread *m_pRefreshThread = new MyThread(this);
     m_pRefreshThread->start();
-
-    /* Put this code in the dashboards deconstructor he said.
-     *
-     *
-    m_pRefreshThread->performExit();
-    while(m_pRefreshThread->isRunning())
-    {
-        msleep(10);
-    }
-    delete m_pRefreshThread;
-    */
 
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
     paintEvents();          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
     updateGroupsView();
-    updateBulletinsView();
-    updateRemindersView();
+    updateBulletinsView();  // populates bulletins view
+    updateRemindersView();  // populates reminders view
+    ui->bulletinView->scrollToBottom();
 
     /*-- Signals & Slots --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
@@ -65,8 +51,16 @@ dashboard::dashboard(QString u, QWidget *parent) :
 */
 dashboard::~dashboard()
 {
-    //m_pRefreshThread->performExit();
-    //delete m_pRefreshThread;
+    /* Put this code in the dashboards deconstructor he said.
+     *
+     *
+    m_pRefreshThread->performExit();
+    while(m_pRefreshThread->isRunning())
+    {
+        msleep(10);
+    }
+    delete m_pRefreshThread;
+    */
 
     delete ui;
 }
@@ -401,6 +395,7 @@ void dashboard::on_createGroup_clicked()
     }
 }
 
+// PURPOSE: opens up new window to display invites. is this still needed ?
 void dashboard::on_invites_button_clicked()
 {
     invitations invites(myuser);
@@ -423,10 +418,13 @@ void dashboard::on_sendButton_clicked()
     else {
         qDebug() << query.lastError().text();
     }
+
+    // clear message box after message is sent
+    ui->messageBox->clear();
 }
 
-// PURPOSE: slot for when user types a message.
-// It limits the number of characters a user can type, and counts the letters.
+// PURPOSE: slot for when user types a message in bulletin.
+// limits message length and updates remaining characters.
 void dashboard::on_messageBox_textChanged()
 {
     int MAX = 100;

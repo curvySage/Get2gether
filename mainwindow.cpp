@@ -55,20 +55,20 @@ void MainWindow::on_login_button_clicked()
 
     // if record found with entered user and pass, open dashboard.
     if(count==1) {
-            query.exec("UPDATE innodb.USERS SET status = 1 WHERE username = '"+myuser+"'");
-            myconn.closeConn();
-            this->hide();
+        query.exec("UPDATE innodb.USERS SET status = 1 WHERE username = '"+myuser+"'");
+        myconn.closeConn();
+        this->hide();
 
-            dashboard dash(myuser);
-            dash.setModal(true);
-            dash.exec();
-        }
-        // else display error popup message
-        else {
-            QMessageBox::information(this, "Login", "Username or Password is incorrect.");
-        }
-
+        dashboard dash(myuser);
+        dash.setModal(true);
+        dash.exec();
     }
+    // else display error popup message
+    else {
+        qDebug() << query.lastError().text();
+        QMessageBox::information(this, "Login", "Username or Password is incorrect.");
+    }
+}
 
 // PURPOSE: creates new account by inserting entered user and pass into database.
 void MainWindow::on_create_clicked()
@@ -79,16 +79,22 @@ void MainWindow::on_create_clicked()
     user_s = ui->username_create->text();
     pass_s = ui->password_create->text();
 
-    query.exec("INSERT INTO innodb.USERS (username, password) VALUES ('"+user_s+"', '"+pass_s+"')");
-
-    // display popup message if query was succesful.
-    if (query.isActive()) {
-        qDebug("Account Created");
-        QMessageBox::information(this, "Login", "Account Created!");
-
+    if (user_s.length() == 0 || pass_s.length() == 0) {
+        QMessageBox::information(this, "Create", "Username or Password is empty.");
     }
-    // display error message in console.
     else {
-        qDebug() << query.lastError().text();
+        query.exec("INSERT INTO innodb.USERS (username, password) VALUES ('"+user_s+"', '"+pass_s+"')");
+
+        // display popup message if query was succesful.
+        if (query.isActive()) {
+            qDebug("Account Created");
+            QMessageBox::information(this, "Create", "Account Created!");
+
+        }
+        // display error popup message
+        else {
+            QMessageBox::information(this, "Create", "Unable to create account.");
+            qDebug() << query.lastError().text();
+        }
     }
 }

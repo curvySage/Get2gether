@@ -1,5 +1,6 @@
 #include "mythread.h"
 
+// PURPOSE: constructor for creating a thread
 MyThread::MyThread(QObject * pObj) {
     m_pReciever = pObj;
     m_exit = false;
