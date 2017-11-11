@@ -5,6 +5,10 @@
 #include <QTableView>
 #include <connection.h>
 #include <dialog.h>
+#include <QThread>
+#include <QtCore>
+#include <mythread.h>
+
 namespace Ui {
 class dashboard;
 }
@@ -39,12 +43,15 @@ private slots:
     void updateEventsView();
     void updateEventsView(const QModelIndex &index);
     void updateGroupsView();
+    void updateBulletinsView();
+    void updateRemindersView();
     void paintEvents();
     void clearEditInfo();
     void on_calendarWidget_selectionChanged();
     void on_groupsview_clicked(const QModelIndex &index);
     void on_createGroup_clicked();
-    void on_invites_button_clicked();
+    void on_sendButton_clicked();
+    void on_messageBox_textChanged();
 
     void on_networktabs_currentChanged(int index);
 

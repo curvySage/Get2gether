@@ -12,6 +12,7 @@
 #include "ui_dashboard.h"
 #include "dashboard.h"
 #include "invitations.h"
+#include "mythread.h"
 
 
 /* Purpose:         Full constructor
@@ -24,15 +25,21 @@ dashboard::dashboard(QString u, QWidget *parent) :
     ui->setupUi(this);
     ui->calendarWidget->setGridVisible(true);           // creates calendar borders
     myuser = u;                                         // set user
-    ui->userlabel->setText(u);                          // set user dashboard label
+    ui->userlabel->setText(myuser);                     // set user dashboard label
+    myconn.openConn();                                  // connect to database
 
-    myconn.openConn();  // connect to database
+    /*-- Thread -- */
+    MyThread *m_pRefreshThread = new MyThread(this);
+    m_pRefreshThread->start();
 
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
     paintEvents();          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
     updateGroupsView();
+    updateBulletinsView();  // populates bulletins view
+    updateRemindersView();  // populates reminders view
+    ui->bulletinView->scrollToBottom();
 
     /*-- Signals & Slots --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
@@ -44,6 +51,17 @@ dashboard::dashboard(QString u, QWidget *parent) :
 */
 dashboard::~dashboard()
 {
+    /* Put this code in the dashboards deconstructor he said.
+     *
+     *
+    m_pRefreshThread->performExit();
+    while(m_pRefreshThread->isRunning())
+    {
+        msleep(10);
+    }
+    delete m_pRefreshThread;
+    */
+
     delete ui;
 }
 
@@ -105,6 +123,25 @@ void dashboard::updateEventsView(const QModelIndex &groupID)
 void dashboard::updateGroupsView()
 {
     displayResults(ui->groupsview, "SELECT ID AS \"Group ID\", name AS \"Group Name\" FROM innodb.GROUPS, innodb.GROUP_MEMBERS WHERE ID = groupID AND username = '" +myuser+ "'");          // populate associated groups
+}
+
+void dashboard::updateBulletinsView()
+{
+    displayResults(ui->bulletinView, "SELECT userID, message FROM innodb.BULLETINS");
+}
+
+
+// PURPOSE: returns the events from the current week.
+// PRECONDITION: An event has its yearweek column set when inserted in the database. This is done in dialog.cpp
+void dashboard::updateRemindersView()
+{
+    // get the current year and week from currentDate.
+    int week = QDate::currentDate().weekNumber();  //ex: 43
+    int year = QDate::currentDate().year();        //ex: 2017
+    QString yearweek = QString::number(year) + QString::number(week); // ex: 201743
+
+    // return events from the current week.
+    displayResults(ui->reminders, "SELECT date, description, start, end, groupID FROM innodb.EVENTS WHERE yearweek = '"+yearweek+"'");
 }
 
 /* Purpose:         Paints all cells with events in database green
@@ -417,17 +454,6 @@ void dashboard::on_createGroup_clicked()
     }
 }
 
-/* Purpose:
- * Postconditions:
-*/
-void dashboard::on_invites_button_clicked()
-{
-    invitations invites(myuser);
-    invites.setModal(true);
-    invites.setWindowTitle("Invitations");
-    invites.exec();
-}
-
 /* Purpose:         Determines which mode dashboard is in:
  *                  group or personal
 */
@@ -441,5 +467,47 @@ void dashboard::on_networktabs_currentChanged(int index)
     else
     {
         setMode(true);
+    }
+}
+
+// PURPOSE: slot for when user sends a message
+void dashboard::on_sendButton_clicked()
+{
+    QString message = ui->messageBox->toPlainText();
+    QString current = QDate::currentDate().toString();
+    QSqlQuery query;
+
+    query.exec("INSERT INTO innodb.BULLETINS(date, userID, message) VALUES ('"+current+"','"+myuser+"','"+message+"')");
+    if (query.isActive()) {
+        qDebug("Inserted message into database.");
+    }
+    else {
+        qDebug() << query.lastError().text();
+    }
+
+    // clear message box after message is sent
+    ui->messageBox->clear();
+}
+
+// PURPOSE: slot for when user types a message in bulletin.
+// limits message length and updates remaining characters.
+void dashboard::on_messageBox_textChanged()
+{
+    int MAX = 100;
+
+    // get message length. then update display count.
+    QString lettercount = QString::number(ui->messageBox->toPlainText().length());
+    ui->count->setText(lettercount + " / 100");
+
+    // if message is over 100, limit it
+    if (ui->messageBox->toPlainText().length() > MAX) {
+        ui->messageBox->textCursor().deletePreviousChar();
+    }
+    // if message is 100, change label to red.
+    if (ui->messageBox->toPlainText().length() == MAX) {
+        ui->count->setStyleSheet("color: red;");
+    }
+    else {
+        ui->count->setStyleSheet("color: black;");
     }
 }

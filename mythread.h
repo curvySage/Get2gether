@@ -3,7 +3,7 @@
 #include <QtCore>
 #include <QThread>
 
-// PURPOSE: This class is used to pool the database.
+// PURPOSE: This class is used to run a thread.
 class MyThread : public QThread
 {
     Q_OBJECT
@@ -14,10 +14,10 @@ public:
     MyThread(QObject *pObj);
 
 signals:
-    void mySignal();
+    void mysignal();
 
 private:
-    //Q_OBJECT *m_pReciever;
+    QObject *m_pReciever;
     bool m_exit;
 
 };

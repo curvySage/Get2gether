@@ -34,7 +34,8 @@ SOURCES += \
     connection.cpp \
     dialog.cpp \
     grouppopup.cpp \
-    invitations.cpp
+    invitations.cpp \
+    mythread.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -42,7 +43,8 @@ HEADERS += \
     connection.h \
     dialog.h \
     grouppopup.h \
-    invitations.h
+    invitations.h \
+    mythread.h
 
 FORMS += \
         mainwindow.ui \
@@ -57,3 +59,6 @@ else:unix: LIBS += -L$$PWD/connector/lib/ -lmysqlclient.18
 
 INCLUDEPATH += $$PWD/connector
 DEPENDPATH += $$PWD/connector
+
+RESOURCES += \
+    assets.qrc

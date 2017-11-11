@@ -48,6 +48,14 @@ void Dialog::on_buttonBox_accepted()
         query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, groupID) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', 0)");
     }
 
+    // get the current dates week and year. then set that for a new event.
+    int week = ui->dateEdit->date().weekNumber();   // get the dates week. ex: 43
+    int year = ui->dateEdit->date().year();         // get the dates year. ex: 2017
+    QString yearweek = QString::number(year) + QString::number(week); // ex: 201743
+
+    // Add new event into EVENTS table
+    query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, yearweek) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', '"+yearweek+"'");
+
     // Get newly created eventID and add new entry into USER_EVENTS
     result = getNewEventID();
     query.exec("INSERT INTO innodb.USER_EVENTS(username, eventID) VALUES ('" +myuser+ "','" +result+ "')");
