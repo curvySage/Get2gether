@@ -44,6 +44,8 @@ private slots:
     void on_createGroup_clicked();
     void on_invites_button_clicked();
     void on_sendButton_clicked();
+    void on_messageBox_textChanged();
+
 private:
     Ui::dashboard *ui;
 };

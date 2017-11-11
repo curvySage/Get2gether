@@ -35,9 +35,10 @@ void Dialog::on_buttonBox_accepted()
     QSqlQuery query;
     QString result;
 
-    int week = ui->dateEdit->date().weekNumber();   // get the dates week
-    int year = ui->dateEdit->date().year();         // get the dates year.
-    QString yearweek = QString::number(year) + QString::number(week);
+    // get the current dates week and year. then set that for a new event.
+    int week = ui->dateEdit->date().weekNumber();   // get the dates week. ex: 43
+    int year = ui->dateEdit->date().year();         // get the dates year. ex: 2017
+    QString yearweek = QString::number(year) + QString::number(week); // ex: 201743
 
     // Add new event into EVENTS table
     query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, yearweek) VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', '"+yearweek+"'");

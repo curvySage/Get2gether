@@ -61,3 +61,8 @@ win32: LIBS += -L$$PWD/connector/windows/lib/opt/ -lmysqlcppconn
 
 INCLUDEPATH += $$PWD/connector/windows/lib/opt
 DEPENDPATH += $$PWD/connector/windows/lib/opt
+
+macx: LIBS += -L$$PWD/connector/mac/lib/ -lmysqlclient
+
+INCLUDEPATH += $$PWD/connector/mac/include
+DEPENDPATH += $$PWD/connector/mac/include

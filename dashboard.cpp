@@ -123,15 +123,18 @@ void dashboard::updateBulletinsView()
     displayResults(ui->bulletinView, "SELECT userID, message FROM innodb.BULLETINS");
 }
 
+
+// PURPOSE: returns the events from the current week.
+// PRECONDITION: An event has its yearweek column set when inserted in the database. This is done in dialog.cpp
 void dashboard::updateRemindersView()
 {
     // get the current year and week from currentDate.
-    int week = QDate::currentDate().weekNumber();
-    int year = QDate::currentDate().year();
-    QString yearweek = QString::number(year) + QString::number(week);
+    int week = QDate::currentDate().weekNumber();  //ex: 43
+    int year = QDate::currentDate().year();        //ex: 2017
+    QString yearweek = QString::number(year) + QString::number(week); // ex: 201743
 
-    // return events from the same current week & year.
-    displayResults(ui->reminders, "SELECT * FROM innodb.EVENTS WHERE yearweek = '"+yearweek+"'");
+    // return events from the current week.
+    displayResults(ui->reminders, "SELECT date, description, start, end, groupID FROM innodb.EVENTS WHERE yearweek = '"+yearweek+"'");
 }
 
 /* Purpose:         Paints all cells with events in database green
@@ -406,6 +409,7 @@ void dashboard::on_invites_button_clicked()
     invites.exec();
 }
 
+// PURPOSE: slot for when user sends a message
 void dashboard::on_sendButton_clicked()
 {
     QString message = ui->messageBox->toPlainText();
@@ -418,5 +422,28 @@ void dashboard::on_sendButton_clicked()
     }
     else {
         qDebug() << query.lastError().text();
+    }
+}
+
+// PURPOSE: slot for when user types a message.
+// It limits the number of characters a user can type, and counts the letters.
+void dashboard::on_messageBox_textChanged()
+{
+    int MAX = 100;
+
+    // get message length. then update display count.
+    QString lettercount = QString::number(ui->messageBox->toPlainText().length());
+    ui->count->setText(lettercount + " / 100");
+
+    // if message is over 100, limit it
+    if (ui->messageBox->toPlainText().length() > MAX) {
+        ui->messageBox->textCursor().deletePreviousChar();
+    }
+    // if message is 100, change label to red.
+    if (ui->messageBox->toPlainText().length() == MAX) {
+        ui->count->setStyleSheet("color: red;");
+    }
+    else {
+        ui->count->setStyleSheet("color: black;");
     }
 }
