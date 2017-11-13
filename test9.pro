@@ -33,14 +33,16 @@ SOURCES += \
     dashboard.cpp \
     connection.cpp \
     dialog.cpp \
-    grouppopup.cpp
+    grouppopup.cpp \
+    mythread.cpp
 
 HEADERS += \
         mainwindow.h \
     dashboard.h \
     connection.h \
     dialog.h \
-    grouppopup.h
+    grouppopup.h \
+    mythread.h
 
 FORMS += \
         mainwindow.ui \
@@ -48,11 +50,12 @@ FORMS += \
     dialog.ui \
     grouppopup.ui
 
-unix|win32: LIBS += -L$$PWD/connector/lib/opt/ -lmysqlcppconn
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/lib/release/ -lmysqlclient.18
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/lib/debug/ -lmysqlclient.18
+else:unix: LIBS += -L$$PWD/connector/lib/ -lmysqlclient.18
 
-INCLUDEPATH += $$PWD/connector/lib/opt
-DEPENDPATH += $$PWD/connector/lib/opt
+INCLUDEPATH += $$PWD/connector
+DEPENDPATH += $$PWD/connector
 
-
-INCLUDEPATH += $$PWD/connector/include
-DEPENDPATH += $$PWD/connector/include
+RESOURCES += \
+    assets.qrc

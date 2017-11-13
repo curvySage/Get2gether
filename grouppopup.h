@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QString>
+#include <Qt>
 #include <connection.h>
 
 namespace Ui {
@@ -19,17 +20,16 @@ public:
     connection myconn;
     explicit GroupPopUp(QWidget *parent = 0);
     ~GroupPopUp();
-
     void setUser(QString u);
     bool loadAddFriendsList();
     QString getNewGroupID();
 
+private:
+    Ui::GroupPopUp *ui;
+
 private slots:
     void on_buttonBox_accepted();
     void on_buttonBox_rejected();
-
-private:
-    Ui::GroupPopUp *ui;
 };
 
 #endif // GROUPPOPUP_H
