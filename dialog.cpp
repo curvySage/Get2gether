@@ -52,11 +52,13 @@ void Dialog::setDate(const QDate date)
     ui->dateEdit->setDate(date);
 }
 
+//PURPOSE: sets value of groupModeSet
 void Dialog::setMode(bool newMode)
 {
     groupModeSet=newMode;
 }
 
+//PURPOSE: sets value of groupID
 void Dialog::setGroupID(QString newID)
 {
     groupID = newID;
@@ -94,6 +96,8 @@ QString Dialog::getNewEventID()
 /*|    Virtual Methods     |*/
 /*'------------------------'*/
 
+//PURPOSE: Determines what's done when user selects
+//         red "x-button" in dialog's corner
 void Dialog::closeEvent(QCloseEvent *event)
 {
     accepted = false;
@@ -144,6 +148,11 @@ void Dialog::on_buttonBox_accepted()
                               "FROM innodb.GROUP_MEMBERS "
                               "WHERE groupID = '" +groupID+ "'");
 
+        /* If select member query is successful
+         *      Grab each member's uername
+         *      Insert into database newly created event into user_event
+         *          using member's username and new eventID
+        */
         if(selectMemberQ.exec() && selectMemberQ.first())
         {
             do
