@@ -6,6 +6,14 @@
 #include "grouppopup.h"
 #include "ui_grouppopup.h"
 
+/*=================================================================================================================================*/
+//                                          class GroupPopUp-Specific Methods
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Constructor       |*/
+/*'------------------------'*/
+
 /* Purpose:         Default constructor
  * Postconditions:  New create group dialog is created
 */
@@ -16,6 +24,12 @@ GroupPopUp::GroupPopUp(QWidget *parent) :
     ui->setupUi(this);
 }
 
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Destructor        |*/
+/*'------------------------'*/
+
 /* Purpose:         Default destructor
  * Postconditions:  Destroys this object
 */
@@ -24,6 +38,12 @@ GroupPopUp::~GroupPopUp()
     delete ui;
 }
 
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|       Accessors        |*/
+/*'------------------------'*/
+
 /* Purpose:         Sets current user calling dialog box
  * Postconditions:  myuser = u
 */
@@ -31,6 +51,33 @@ void GroupPopUp::setUser(QString u)
 {
     myuser = u;
 }
+
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|       Accessors        |*/
+/*'------------------------'*/
+
+/* Purpose:         Returns string value of newly created
+ *                  group's ID
+ * Postconditions:  groupID is returned in type QString
+*/
+QString GroupPopUp::getNewGroupID()
+{
+    QSqlQuery *query = new QSqlQuery(myconn.db);
+    QString result;
+    query->prepare("SELECT MAX(ID) FROM innodb.GROUPS");
+    query->exec();
+    query->first();
+
+    result = query->value(0).toString();
+    return result;
+}
+
+/*=================================================================================================================================*/
+//                                                          SLOTS
+/*=================================================================================================================================*/
+
 
 /* Purpose:         Initializes add friends list
  * Postconditions:  addFriendsList is filled with all
@@ -113,9 +160,16 @@ void GroupPopUp::on_buttonBox_accepted()
         qDebug() << memberQuery.lastError().text();
     }
 
-    // -------> MUST NOW INCLUDE... <---------
     // Identify users selected in add friends list
-    // Send invites to checked users
+    // Add users to group
+        for(int i = 0; i < ui->addFriendsList->count(); i++){
+            qDebug() << "i is this: " << i;
+            QListWidgetItem *item = ui->addFriendsList->item(i);
+            if(item->checkState()==Qt::Checked){
+                QString member = ui->addFriendsList->item(i)->text();
+                memberQuery.exec("INSERT INTO innodb.GROUP_MEMBERS(username, groupID) VALUES ('" +member+ "','" +newGroupID+ "')");
+            }
+        }
 
     accepted = true;
     GroupPopUp::close();
@@ -128,20 +182,4 @@ void GroupPopUp::on_buttonBox_rejected()
 {
     accepted = false;
     GroupPopUp::close();
-}
-
-/* Purpose:         Returns string value of newly created
- *                  group's ID
- * Postconditions:  groupID is returned in type QString
-*/
-QString GroupPopUp::getNewGroupID()
-{
-    QSqlQuery *query = new QSqlQuery(myconn.db);
-    QString result;
-    query->prepare("SELECT MAX(ID) FROM innodb.GROUPS");
-    query->exec();
-    query->first();
-
-    result = query->value(0).toString();
-    return result;
 }

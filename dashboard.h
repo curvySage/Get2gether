@@ -24,15 +24,15 @@ public:
     QString myuser;
     bool isGroupMode;               // to indicate group/personal mode
     QString groupID;
-
     explicit dashboard(QString u, QWidget *parent = 0);
     ~dashboard();
-    void displayResults(QTableView * table, QString);
-    void paint(QDate date, QColor color);
-    void setMode(bool isGroup);
     bool getMode();
-    void setGroupID(const QModelIndex &groupID);
     QString getGroupID();
+    void setMode(bool isGroup);
+    void setGroupID(const QModelIndex &groupID);
+
+private:
+    Ui::dashboard *ui;
 
 private slots:
     void on_loadonline_clicked();
@@ -41,10 +41,13 @@ private slots:
     void on_editEvents_clicked();
     void on_deleteEvents_clicked();
     void updateEventsView();
-    void updateEventsView(const QModelIndex &index);
+    void updateMemberEvents();
+    void updateGroupEvents();
     void updateGroupsView();
     void updateBulletinsView();
     void updateRemindersView();
+    void displayResults(QTableView * table, QString);
+    void paint(QDate date, QColor color);
     void paintEvents();
     void clearEditInfo();
     void on_calendarWidget_selectionChanged();
@@ -52,11 +55,10 @@ private slots:
     void on_createGroup_clicked();
     void on_sendButton_clicked();
     void on_messageBox_textChanged();
-
     void on_networktabs_currentChanged(int index);
-
-private:
-    Ui::dashboard *ui;
+    void on_homeButton_clicked();
+    void resetGroupAttributes();
+    //void on_onlineview_clicked(const QModelIndex &index);
 };
 
 #endif // DASHBOARD_H

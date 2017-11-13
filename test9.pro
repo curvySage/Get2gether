@@ -34,7 +34,6 @@ SOURCES += \
     connection.cpp \
     dialog.cpp \
     grouppopup.cpp \
-    invitations.cpp \
     mythread.cpp
 
 HEADERS += \
@@ -43,15 +42,13 @@ HEADERS += \
     connection.h \
     dialog.h \
     grouppopup.h \
-    invitations.h \
     mythread.h
 
 FORMS += \
         mainwindow.ui \
     dashboard.ui \
     dialog.ui \
-    grouppopup.ui \
-    invitations.ui
+    grouppopup.ui
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/lib/release/ -lmysqlclient.18
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/lib/debug/ -lmysqlclient.18

@@ -22,12 +22,12 @@ public:
     QString myuser;
     QString mypass;
 
+private:
+    Ui::MainWindow *ui;
+
 private slots:
     void on_login_button_clicked();
     void on_create_clicked();
-
-private:
-    Ui::MainWindow *ui;
 };
 
 #endif // MAINWINDOW_H

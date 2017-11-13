@@ -1,9 +1,23 @@
 #include "connection.h"
 
+/*=================================================================================================================================*/
+//                                          class Connection-Specific Methods
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Constructor       |*/
+/*'------------------------'*/
+
 // PURPOSE: default constructor
 connection::connection()
 {
 }
+
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|    Open Connection     |*/
+/*'------------------------'*/
 
 // PURPOSE: opens connection to database
 void connection::openConn() {
@@ -14,6 +28,10 @@ void connection::openConn() {
     db.setPassword("get2gether");
     db.open();
 }
+
+/*.------------------------.*/
+/*|    Close Connection    |*/
+/*'------------------------'*/
 
 // PURPOSE: closes current connection to database
 void connection::closeConn() {

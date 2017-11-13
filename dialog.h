@@ -5,6 +5,7 @@
 #include <QString>
 #include <QDate>
 #include <connection.h>
+#include <QCloseEvent>
 
 namespace Ui {
 class Dialog;
@@ -17,7 +18,7 @@ class Dialog : public QDialog
 
 public:
     bool accepted;    // to indicate if accepted or rejected
-    bool modeSet;
+    bool groupModeSet;
     QString groupID;
 
 
@@ -33,12 +34,13 @@ public:
     void setMode(bool newMode);
     void setGroupID(QString newID);
 
+private:
+    Ui::Dialog *ui;
+
 private slots:
     void on_buttonBox_accepted();
     void on_buttonBox_rejected();
-
-private:
-    Ui::Dialog *ui;
+    void closeEvent(QCloseEvent *event);
 };
 
 #endif // DIALOG_H

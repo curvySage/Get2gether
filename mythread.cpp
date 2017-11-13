@@ -1,5 +1,13 @@
 #include "mythread.h"
 
+/*=================================================================================================================================*/
+//                                          class MyThread-Specific Methods
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Constructor       |*/
+/*'------------------------'*/
+
 // PURPOSE: constructor for creating a thread
 MyThread::MyThread(QObject * pObj) {
     m_pReciever = pObj;
@@ -12,6 +20,23 @@ MyThread::MyThread(QObject * pObj) {
     connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(updateBulletinsView()));
 }
 
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|        Mutators        |*/
+/*'------------------------'*/
+
+// PURPOSE: exits the thread.
+void MyThread::performExit() {
+    m_exit = true;
+}
+
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|    Virtual Methods     |*/
+/*'------------------------'*/
+
 // PURPOSE: overrides the run function.
 void MyThread::run() {
     while (!m_exit) {
@@ -19,9 +44,3 @@ void MyThread::run() {
         emit mysignal();
     }
 }
-
-// PURPOSE: exits the thread.
-void MyThread::performExit() {
-    m_exit = true;
-}
-
