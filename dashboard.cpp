@@ -192,6 +192,19 @@ void dashboard::on_homeButton_clicked()
 */
 void dashboard::on_addevents_clicked()
 {
+
+    if(this->groupID == "0")
+    {
+        QMessageBox MsgBox;
+        MsgBox.setWindowTitle("Woah There!");
+        MsgBox.setText("Error: Select a group you want to add a group event.");
+        MsgBox.exec();
+
+        qDebug("Insertion failed : select group to add group event.");
+
+        return;
+    }
+
     Dialog h;
     h.setDate(ui->calendarWidget->selectedDate());    // sets date edit text to currently selected date
     h.setUser(myuser);
@@ -620,7 +633,6 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
 {
     QString val=ui->eventsview->model()->data(index).toString();            // Grab value user clicked in eventsview
     bool isGroupEvent;
-    QString eventGroupID;
     QSqlQuery selectQry;
     selectQry.prepare("SELECT username, ID, date, description, start, end, groupID "
                       "FROM innodb.EVENTS, innodb.USER_EVENTS "
@@ -631,16 +643,13 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
     */
     if(selectQry.exec()){
         while(selectQry.next()){
-
-            eventGroupID = selectQry.value(6).toString();
-            isGroupEvent = (eventGroupID != 0);
-
+            isGroupEvent = (selectQry.value(6).toInt() != 0);
             if(isGroupEvent)
             {
                 QSqlQuery groupNameQ;
                 QString groupName;
 
-                groupNameQ.prepare("SELECT name FROM innodb.GROUPS WHERE ID = '" +eventGroupID+ "'");
+                groupNameQ.prepare("SELECT name FROM innodb.GROUPS WHERE ID = '" +selectQry.value(6).toString()+ "'");
 
                 if(groupNameQ.exec() && groupNameQ.first())
                 {

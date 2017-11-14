@@ -50,6 +50,7 @@ void Dialog::setUser(QString u)
 void Dialog::setDate(const QDate date)
 {
     ui->dateEdit->setDate(date);
+    this->date = date.toString();
 }
 
 //PURPOSE: sets value of groupModeSet
@@ -73,7 +74,7 @@ void Dialog::setGroupID(QString newID)
 //PURPOSE: returns date entered in date edit
 const QDate Dialog::getDate()
 {
-    return ui->dateEdit->date();
+    return QDate::fromString(date, "ddd MMM d yyyy");
 }
 
 //PURPOSE: returns newly created event ID
@@ -100,7 +101,11 @@ QString Dialog::getNewEventID()
 //         red "x-button" in dialog's corner
 void Dialog::closeEvent(QCloseEvent *event)
 {
-    accepted = false;
+    if(this->result() == QDialog::Accepted)
+        accepted = true;
+    else
+        accepted = false;
+
     event->accept();
 }
 
@@ -117,7 +122,9 @@ void Dialog::closeEvent(QCloseEvent *event)
 */
 void Dialog::on_buttonBox_accepted()
 {
-    QString mydate = ui->dateEdit->date().toString();
+    this->accept();
+
+    date = ui->dateEdit->date().toString();
     QString mystart = ui->start->text();
     QString myend = ui->end->text();
     QString mydesc = ui->description->toPlainText();
@@ -141,7 +148,7 @@ void Dialog::on_buttonBox_accepted()
 
         // Add new group event into EVENTS table
         query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, groupID, yearweek) "
-                   "VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', '" +groupID+ "', '" +yearweek+ "')");
+                   "VALUES ('"+date+"','"+mystart+"', '"+myend+"','"+mydesc+"', '" +groupID+ "', '" +yearweek+ "')");
         // Get newly created eventID and add new entry into USER_EVENTS
         newEventID = getNewEventID();
         selectMemberQ.prepare("SELECT username "
@@ -167,7 +174,7 @@ void Dialog::on_buttonBox_accepted()
     {
         // Add new event into EVENTS table
         query.exec("INSERT INTO innodb.EVENTS (date, start, end, description, groupID, yearweek) "
-                   "VALUES ('"+mydate+"','"+mystart+"', '"+myend+"','"+mydesc+"', 0, '" +yearweek+ "')");
+                   "VALUES ('"+date+"','"+mystart+"', '"+myend+"','"+mydesc+"', 0, '" +yearweek+ "')");
         newEventID = getNewEventID();
 
         query.exec("INSERT INTO innodb.USER_EVENTS(username, eventID) "
@@ -188,6 +195,8 @@ void Dialog::on_buttonBox_accepted()
 //PURPOSE: closes add events window when cancel is clicked.
 void Dialog::on_buttonBox_rejected()
 {
+    this->reject();
+
     accepted = false;
     Dialog::close();
 }
