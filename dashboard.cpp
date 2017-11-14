@@ -193,7 +193,7 @@ void dashboard::on_homeButton_clicked()
 void dashboard::on_addevents_clicked()
 {
 
-    if(this->groupID == "0")
+    if(this->groupID == "0" && isGroupMode)
     {
         QMessageBox MsgBox;
         MsgBox.setWindowTitle("Woah There!");
@@ -328,10 +328,18 @@ void dashboard::on_editEvents_clicked()
                 if(eventCount == 0)
                     paint(originalDate, Qt::white);
 
-                if(isGroupMode)
+                if(isGroupEvent)
+                {
                     paint(modifyDate, Qt::cyan);
+                    updateMemberEvents();
+                }
                 else
+                {
                     paint(modifyDate, Qt::green);
+
+                    if(isGroupMode) updateMemberEvents();
+                    else updateEventsView();
+                }
 
                 clearEditInfo();
             }
