@@ -29,16 +29,16 @@ dashboard::dashboard(QString u, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::dashboard)
 {
+    /*-- Initialize dashboard attributes --*/
+    myuser = u;                                         // set user
+    isGroupMode = false;
+    groupID = "0";
+
     /*-- Initialize dashboard --*/
     ui->setupUi(this);
     ui->calendarWidget->setGridVisible(true);           // creates calendar borders
     ui->userlabel->setText(myuser);                     // set user dashboard label
     myconn.openConn();                                  // connect to database
-
-    /*-- Initialize dashboard attributes --*/
-    myuser = u;                                         // set user
-    isGroupMode = false;
-    groupID = "0";
 
     /*-- Thread -- */
     MyThread *m_pRefreshThread = new MyThread(this);
