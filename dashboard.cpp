@@ -235,14 +235,14 @@ void dashboard::on_addevents_clicked()
         */
         if(isGroupMode)
         {
-            paint(h.getDate(), Qt::cyan);
             updateMemberEvents();
         }
         else
         {
-            paint(h.getDate(), Qt::green);
             updateEventsView();
         }
+
+        paintEvents();
     }
 }
 
@@ -336,17 +336,18 @@ void dashboard::on_editEvents_clicked()
 
                 if(isGroupEvent)
                 {
-                    paint(modifyDate, Qt::cyan);
+                    //paint(modifyDate, Qt::cyan);
                     updateMemberEvents();
                 }
                 else
                 {
-                    paint(modifyDate, Qt::green);
+                    //paint(modifyDate, Qt::green);
 
                     if(isGroupMode) updateMemberEvents();
                     else updateEventsView();
                 }
 
+                paintEvents();
                 clearEditInfo();
             }
         }
@@ -758,9 +759,10 @@ void dashboard::on_networktabs_currentChanged(int index)
     // If tab index = 0 ("Friends"), set isGroupMode false
     if(index == 0)
     {
-        setMode(false);
         resetGroupAttributes();
+        setMode(false);
         updateEventsView();
+        paintEvents();
     }
     else
     {
