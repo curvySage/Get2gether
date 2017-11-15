@@ -33,6 +33,7 @@ public:
     void setMode(bool isGroup);
     void setGroupID(const QModelIndex &groupID);
     void setGroupName();
+    void updateCalendarName(QString name);
 
 private:
     Ui::dashboard *ui;

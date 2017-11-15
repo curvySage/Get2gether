@@ -38,7 +38,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
     /*-- Initialize dashboard --*/
     ui->setupUi(this);
     ui->calendarWidget->setGridVisible(true);           // creates calendar borders
-    ui->userlabel->setText(myuser);                     // set user dashboard label
+    updateCalendarName(myuser);                     // set user dashboard label
     myconn.openConn();                                  // connect to database
 
     /*-- Thread -- */
@@ -128,6 +128,15 @@ void dashboard::setGroupName()
         groupName = groupNameQ.value(0).toString();
 }
 
+/* Purpose:         Updates the calendar label and centers it.
+ * Postconditions:  Sets calendarName to selected group's name
+*/
+void dashboard::updateCalendarName(QString name)
+{
+    ui->calendarName->setText(name);
+    ui->calendarName->setAlignment(Qt::AlignCenter);
+}
+
 /*=================================================================================================================================*/
 
 /*.------------------------.*/
@@ -184,7 +193,7 @@ void dashboard::on_homeButton_clicked()
                                    "FROM innodb.USERS "
                                    "WHERE status = 1");
     //Update Userlabel to the username
-    ui->userlabel->setText(myuser);
+    updateCalendarName("[Personal] " + myuser);
     updateEventsView();
     paintEvents();                          // Paint personal and group events appropriately
 }
@@ -496,11 +505,14 @@ void dashboard::on_deleteEvents_clicked()
 void dashboard::on_sendButton_clicked()
 {
     QString message = ui->messageBox->toPlainText();
-    QString current = QDate::currentDate().toString();
     QSqlQuery query;
+    QDateTime date = QDateTime::currentDateTime();
 
-    query.exec("INSERT INTO innodb.BULLETINS(date, userID, message) "
-               "VALUES ('"+current+"','"+myuser+"','"+message+"')");
+    query.prepare("INSERT INTO innodb.BULLETINS(date, userID, message, groupID) VALUES (:val,'"+myuser+"','"+message+"', :group)");
+    query.bindValue(":val",date);
+    query.bindValue(":group", getGroupID());
+    query.exec();
+
     if (query.isActive()) {
         qDebug("Inserted message into database.");
     }
@@ -510,6 +522,7 @@ void dashboard::on_sendButton_clicked()
 
     // clear message box after message is sent
     ui->messageBox->clear();
+    ui->bulletinView->scrollToBottom();
 }
 
 
@@ -686,9 +699,12 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
                           "WHERE innodb.GROUPS.ID='"+val+"'");
     if(selectQryName.exec()){
         while(selectQryName.next()){
-        ui->userlabel->setText(selectQryName.value(0).toString());
+        updateCalendarName("# " + selectQryName.value(0).toString());
         }
     }
+
+    // update bulletin view to group specific
+    updateBulletinsView();
 }
 
 /* Purpose:         Displays all of the user's associated groups into
@@ -710,8 +726,10 @@ void dashboard::updateGroupsView()
 */
 void dashboard::updateBulletinsView()
 {
+    QString currentGroup = getGroupID();
+
     displayResults(ui->bulletinView, "SELECT userID, message "
-                                     "FROM innodb.BULLETINS");
+                                     "FROM innodb.BULLETINS where groupID = '"+currentGroup+"'");
 }
 
 /* Purpose:         returns the events from the current week.
@@ -726,9 +744,10 @@ void dashboard::updateRemindersView()
     QString yearweek = QString::number(year) + QString::number(week); // ex: 201743
 
     // return events from the current week.
-    displayResults(ui->reminders, "SELECT date, description, start, end, groupID "
-                                  "FROM innodb.EVENTS "
-                                  "WHERE yearweek = '"+yearweek+"'");
+    displayResults(ui->reminders,
+                   "SELECT name AS \"Group\", description AS \"Description\", date AS \"Date\", start AS \"Start\", end  AS \"End\" "
+                   "FROM innodb.EVENTS, innodb.GROUPS "
+                   "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.groupID = innodb.GROUPS.ID");
 }
 
 /*=================================================================================================================================*/
@@ -763,6 +782,7 @@ void dashboard::on_networktabs_currentChanged(int index)
         setMode(false);
         updateEventsView();
         paintEvents();
+        updateCalendarName(myuser); //
     }
     else
     {
