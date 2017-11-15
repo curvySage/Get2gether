@@ -29,16 +29,17 @@ dashboard::dashboard(QString u, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::dashboard)
 {
+    /*-- Initialize dashboard attributes --*/
+    myuser = u;                                         // set user
+    isGroupMode = false;
+    groupID = "0";
+    resetStatus = false;
+
     /*-- Initialize dashboard --*/
     ui->setupUi(this);
     ui->calendarWidget->setGridVisible(true);           // creates calendar borders
     ui->userlabel->setText(myuser);                     // set user dashboard label
     myconn.openConn();                                  // connect to database
-
-    /*-- Initialize dashboard attributes --*/
-    myuser = u;                                         // set user
-    isGroupMode = false;
-    groupID = "0";
 
     /*-- Thread -- */
     MyThread *m_pRefreshThread = new MyThread(this);
@@ -173,9 +174,11 @@ void dashboard::on_homeButton_clicked()
 {
     //Set the tab to Online if on group tab
     if(ui->networktabs->currentIndex() == 1){
-        ui->networktabs->setCurrentIndex(0);
-        resetGroupAttributes();                 // Reset set group attributes back to default
+        resetStatus=true;
+        resetGroupAttributes();
+        ui->networktabs->setCurrentIndex(0);                 // Reset set group attributes back to default
     }
+
     //Refresh Online Table
     displayResults(ui->onlineview, "SELECT username "
                                    "FROM innodb.USERS "
@@ -193,6 +196,9 @@ void dashboard::on_homeButton_clicked()
 void dashboard::on_addevents_clicked()
 {
 
+    /* If in group mode but user hasn't selected a group calendar
+     *      Output error
+    */
     if(this->groupID == "0" && isGroupMode)
     {
         QMessageBox MsgBox;
@@ -223,9 +229,9 @@ void dashboard::on_addevents_clicked()
         /* If dashboard is in group mode
          *      Paint group event
          *      Update eventsview with groupevents
-         * Else, in personal
+         * Else,
          *      Paint personal event
-         *      Update eventsview with user events
+         *      Update personal or group calendar eventsview
         */
         if(isGroupMode)
         {
@@ -482,7 +488,7 @@ void dashboard::on_deleteEvents_clicked()
     }
 }
 
-/* Puropse:         slot for when user sends a message
+/* Purpose:         slot for when user sends a message
  * Postcondtions:   Adds entry into inodb.BULLETINS determined by
  *                  user-specified message in message box
 */
@@ -579,43 +585,15 @@ void dashboard::updateEventsView()
 */
 void dashboard::updateMemberEvents()
 {
-    QSqlQuery selectMemberQ;                    // used to select each group member's username
-    QString groupMember, resultQ;
-
-    selectMemberQ.prepare("SELECT username "
-                          "FROM innodb.GROUP_MEMBERS "
-                          "WHERE groupID = '" +groupID+
-                          "' AND username != '" +myuser+ "'");
-
-    // resultQ is used to accumulate all select query commands needed to select
-    // all events of each member
-    resultQ = "(SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
-                      "date AS \"Date\", start AS \"Start\", end AS \"End\""
-              "FROM innodb.EVENTS, innodb.USER_EVENTS "
-              "WHERE eventID = ID "
-              "AND username ='" +myuser+
-              "' AND date ='" + ui->calendarWidget->selectedDate().toString() + "')";
-
-    /* If select member query is successful
-     * While there's a next username returned
-     *      Iterate through each returned username
-     *      Add union select query to resultQ
-    */
-    if(selectMemberQ.exec() && selectMemberQ.first())
-    {
-        do
-        {
-            groupMember = selectMemberQ.value(0).toString();
-            resultQ += " UNION (SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
-                            "date AS \"Date\", start AS \"Start\", end AS \"End\""
-                       "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                       "WHERE eventID = ID "
-                       "AND username ='" +groupMember+
-                       "' AND date ='" + ui->calendarWidget->selectedDate().toString() + "')";
-        }while(selectMemberQ.next());
-    }
-
-    displayResults(ui->eventsview, resultQ);        // Update eventsview with all group member's events
+    displayResults(ui->eventsview, "SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
+                                        "date AS \"Date\", start AS \"Start\", end AS \"End\" "
+                                   "FROM innodb.EVENTS, innodb.USER_EVENTS "
+                                   "WHERE ID = eventID AND "
+                                    "date = '" +ui->calendarWidget->selectedDate().toString()+
+                                    "' AND innodb.USER_EVENTS.username IN (SELECT innodb.GROUP_MEMBERS.username "
+                                                                          "FROM innodb.GROUP_MEMBERS "
+                                                                          "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "') "
+                                   "ORDER BY groupID");        // Update eventsview with all group member's events
 }
 
 /* Purpose:         Updates eventsview to display all group events in
@@ -940,17 +918,25 @@ void dashboard::paintEvents()
         */
         if(isGroupMode)
         {
-            if(isThisGroupEvent) paint(date, Qt::cyan);
-            else paint(date, Qt::green);
+            if(resetStatus == true)
+            {
+                paint(date, Qt::white);
+            }
+            else
+            {
+                if(isThisGroupEvent) paint(date, Qt::cyan);
+                else paint(date, Qt::green);
+            }
         }
         else
-        {
+        {            
             if(isGroupEvent) paint(date, Qt::cyan);
             else paint(date, Qt::green);                                                 // paint parsed date cell green
         }
 
     }while(query->next());                                                    // move to next query result
 }
+
 
 /* Purpose:             Disconnects group calendar connections
  * Preconditions:       Should be called when dashboard is in
@@ -961,9 +947,13 @@ void dashboard::paintEvents()
 */
 void dashboard::resetGroupAttributes()
 {
+    resetStatus = true;
+    paintEvents();
+    resetStatus = false;
     groupID = "0";     // Reset groupID
     groupName = "";
     // Disconnect group calendar functions
     disconnect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateMemberEvents()));
     disconnect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateMemberEvents()));
 }
+
