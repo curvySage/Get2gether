@@ -50,9 +50,9 @@ FORMS += \
     dialog.ui \
     grouppopup.ui
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/lib/release/ -lmysqlclient.18
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/lib/debug/ -lmysqlclient.18
-else:unix: LIBS += -L$$PWD/connector/lib/ -lmysqlclient.18
+RC_ICONS = get2gether_icon.ico
+
+unix|win32: LIBS += -L$$PWD/connector/lib/opt/ -lmysqlcppconn
 
 INCLUDEPATH += $$PWD/connector
 DEPENDPATH += $$PWD/connector
