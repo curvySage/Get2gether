@@ -24,12 +24,15 @@ public:
     QString myuser;
     bool isGroupMode;               // to indicate group/personal mode
     QString groupID;
+    QString groupName;
     explicit dashboard(QString u, QWidget *parent = 0);
     ~dashboard();
     bool getMode();
+    bool resetStatus;
     QString getGroupID();
     void setMode(bool isGroup);
     void setGroupID(const QModelIndex &groupID);
+    void setGroupName();
 
 private:
     Ui::dashboard *ui;
