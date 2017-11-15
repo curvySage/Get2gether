@@ -20,6 +20,7 @@ class dashboard : public QDialog
     Q_OBJECT
 
 public:
+    MyThread *m_pRefreshThread;
     connection myconn;
     QString myuser;
     bool isGroupMode;               // to indicate group/personal mode

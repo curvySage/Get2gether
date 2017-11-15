@@ -42,7 +42,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
     myconn.openConn();                                  // connect to database
 
     /*-- Thread -- */
-    MyThread *m_pRefreshThread = new MyThread(this);
+    m_pRefreshThread = new MyThread(this);
     m_pRefreshThread->start();
 
     /*-- On Load --*/
@@ -65,21 +65,21 @@ dashboard::dashboard(QString u, QWidget *parent) :
 /*|      Destructor        |*/
 /*'------------------------'*/
 
-/* Purpose:         Default destructor
- * Postconditions:  Destroys dashboard ui
+/* Purpose:         Deletes dashboard, stops thread, and sets user to offline
+ * Postconditions:  user is set offline, thread is stopped, then program exits.
 */
 dashboard::~dashboard()
 {
-    /* Put this code in the dashboards deconstructor he said.
-     *
-     *
+    QSqlQuery query;
+    query.exec("UPDATE innodb.USERS SET status = 0 WHERE username = '"+myuser+"'");
+    query.finish();
+
     m_pRefreshThread->performExit();
     while(m_pRefreshThread->isRunning())
     {
-        msleep(10);
+        QThread::msleep(10);
     }
     delete m_pRefreshThread;
-    */
 
     delete ui;
 }
@@ -193,7 +193,7 @@ void dashboard::on_homeButton_clicked()
                                    "FROM innodb.USERS "
                                    "WHERE status = 1");
     //Update Userlabel to the username
-    updateCalendarName("[Personal] " + myuser);
+    updateCalendarName(myuser);
     updateEventsView();
     paintEvents();                          // Paint personal and group events appropriately
 }
@@ -730,6 +730,10 @@ void dashboard::updateBulletinsView()
 
     displayResults(ui->bulletinView, "SELECT userID, message "
                                      "FROM innodb.BULLETINS where groupID = '"+currentGroup+"'");
+
+    // Messages are kept for a week in the database.
+    // Messages are deleted every Monday at 1:00AM
+    // All messages are automatically deleted using an event scheduler in the database.
 }
 
 /* Purpose:         returns the events from the current week.
@@ -978,4 +982,3 @@ void dashboard::resetGroupAttributes()
     disconnect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateMemberEvents()));
     disconnect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateMemberEvents()));
 }
-
