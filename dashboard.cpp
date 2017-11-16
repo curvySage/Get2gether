@@ -683,10 +683,12 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
 void dashboard::on_groupsview_clicked(const QModelIndex &index)
 {
     QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
+
     displayResults(ui->membersview, "SELECT username AS \"Members\" "
                                     "FROM innodb.GROUP_MEMBERS, innodb.GROUPS "
                                     "WHERE innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID "
                                     "AND innodb.GROUPS.ID ='" +val+ "'");
+
     setGroupID(index);      // store groupID
     setGroupName();         // store groupName
     updateGroupEvents();    // show all group's events in eventsview
@@ -713,10 +715,7 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
 */
 void dashboard::updateGroupsView()
 {
-    displayResults(ui->groupsview, "SELECT ID AS \"Group ID\", name AS \"Group Name\" "
-                                   "FROM innodb.GROUPS, innodb.GROUP_MEMBERS "
-                                   "WHERE ID = groupID "
-                                   "AND username = '" +myuser+ "'");          // populate associated groups
+    displayResults(ui->groupsview, "SELECT groupID AS \"Group ID\" FROM innodb.GROUP_MEMBERS WHERE username = '" +myuser+ "'");          // populate associated groups
 }
 
 /* Purpose:         Displays all bulletin messages in
