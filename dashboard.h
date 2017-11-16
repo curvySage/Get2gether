@@ -20,6 +20,7 @@ class dashboard : public QDialog
     Q_OBJECT
 
 public:
+    MyThread *m_pRefreshThread;
     connection myconn;
     QString myuser;
     bool isGroupMode;               // to indicate group/personal mode
@@ -33,6 +34,7 @@ public:
     void setMode(bool isGroup);
     void setGroupID(const QModelIndex &groupID);
     void setGroupName();
+    void updateCalendarName(QString name);
 
 private:
     Ui::dashboard *ui;
