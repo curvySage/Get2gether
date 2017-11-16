@@ -42,12 +42,9 @@ MainWindow::MainWindow(QWidget *parent) :
 /*|      Destructor        |*/
 /*'------------------------'*/
 
-// PURPOSE: default deconstructor, user status set to offline.
+// PURPOSE: default deconstructor
 MainWindow::~MainWindow()
 {
-    QSqlQuery query;
-    query.exec("UPDATE innodb.USERS SET status = 0 WHERE username = '"+myuser+"'");
-
     delete ui;
 }
 
