@@ -137,8 +137,13 @@ void GroupPopUp::on_buttonBox_accepted()
     */
     if(groupName.isEmpty())
     {
+        QMessageBox MsgBox;
+        MsgBox.setWindowTitle("Where is your Group Name?");
+        MsgBox.setText("You need a Group Name!");
+        MsgBox.exec();
         qDebug() << "Error: Name not entered. Group not created.";
         return;
+
     }
 
     query.exec("INSERT INTO innodb.GROUPS(name) VALUES ('" +groupName+ "')");       // Create new group
@@ -163,7 +168,7 @@ void GroupPopUp::on_buttonBox_accepted()
     // Identify users selected in add friends list
     // Add users to group
         for(int i = 0; i < ui->addFriendsList->count(); i++){
-            qDebug() << "i is this: " << i;
+            //qDebug() << "i is this: " << i;
             QListWidgetItem *item = ui->addFriendsList->item(i);
             if(item->checkState()==Qt::Checked){
                 QString member = ui->addFriendsList->item(i)->text();

@@ -50,12 +50,14 @@ FORMS += \
     dialog.ui \
     grouppopup.ui
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/lib/release/ -lmysqlclient.18
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/lib/debug/ -lmysqlclient.18
-else:unix: LIBS += -L$$PWD/connector/lib/ -lmysqlclient.18
+RC_ICONS = get2gether_icon.ico
 
-INCLUDEPATH += $$PWD/connector
-DEPENDPATH += $$PWD/connector
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/mac/lib/release/ -lmysqlclient.18
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/mac/lib/debug/ -lmysqlclient.18
+else:unix: LIBS += -L$$PWD/connector/mac/lib/ -lmysqlclient.18
+
+INCLUDEPATH += $$PWD/connector/mac/include
+DEPENDPATH += $$PWD/connector/mac/include
 
 RESOURCES += \
     assets.qrc
