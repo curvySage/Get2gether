@@ -20,17 +20,17 @@ class dashboard : public QDialog
     Q_OBJECT
 
 public:
-    MyThread *m_pRefreshThread;
-    connection myconn;
-    QString myuser;
-    bool isGroupMode;               // to indicate group/personal mode
-    QString groupID;
-    QString groupName;
     explicit dashboard(QString u, QWidget *parent = 0);
     ~dashboard();
-    bool getMode();
-    bool resetStatus;
+    QString myuser;
+    QString groupID;
+    QString groupName;
+    MyThread *m_pRefreshThread;
+    connection myconn;
     QString getGroupID();
+    bool getMode();
+    bool isGroupMode;               // to indicate group/personal mode
+    bool resetStatus;
     void setMode(bool isGroup);
     void setGroupID(const QModelIndex &groupID);
     void setGroupName();
@@ -42,28 +42,28 @@ private:
 private slots:
     void on_loadonline_clicked();
     void on_addevents_clicked();
-    void on_eventsview_clicked(const QModelIndex &index);
     void on_editEvents_clicked();
     void on_deleteEvents_clicked();
+    void on_createGroup_clicked();
+    void on_sendButton_clicked();
+    void on_homeButton_clicked();
+    void on_eventsview_clicked(const QModelIndex &index);
+    void slot_groupsview_selectedRow(const QItemSelection &, const QItemSelection &);
+    void on_calendarWidget_selectionChanged();
+    void on_messageBox_textChanged();
+    void on_networktabs_currentChanged(int index);
     void updateEventsView();
-    void updateMemberEvents();
-    void updateGroupEvents();
     void updateGroupsView();
     void updateBulletinsView();
     void updateRemindersView();
-    void displayResults(QTableView * table, QString);
+    void updateMemberEvents();
+    void updateGroupEvents();
     void paint(QDate date, QColor color);
     void paintEvents();
     void clearEditInfo();
-    void on_calendarWidget_selectionChanged();
-    void on_groupsview_clicked(const QModelIndex &index);
-    void on_createGroup_clicked();
-    void on_sendButton_clicked();
-    void on_messageBox_textChanged();
-    void on_networktabs_currentChanged(int index);
-    void on_homeButton_clicked();
+    void displayResults(QTableView * table, QString);
     void resetGroupAttributes();
-    //void on_onlineview_clicked(const QModelIndex &index);
+    void slot_refreshThread();
 };
 
 #endif // DASHBOARD_H

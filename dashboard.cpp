@@ -57,6 +57,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
     /*-- Signals & Slots --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
     QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateEventsView()));           // update eventsview for selected date
+    QObject::connect(ui->groupsview->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)), SLOT(slot_groupsview_selectedRow(const QItemSelection &, const QItemSelection &)));
 }
 
 /*=================================================================================================================================*/
@@ -235,6 +236,7 @@ void dashboard::on_addevents_clicked()
     */
     if(h.accepted)
     {
+        updateRemindersView();
         /* If dashboard is in group mode
          *      Paint group event
          *      Update eventsview with groupevents
@@ -555,6 +557,7 @@ void dashboard::on_loadonline_clicked()
                                    "WHERE status = 1");
 }
 
+/*
 /* Purpose:         Initializes event information form when user clicks
  *                  an event in eventsview
  * Postconditions:  Event info filled is determined by event values
@@ -562,6 +565,7 @@ void dashboard::on_loadonline_clicked()
 */
 void dashboard::on_eventsview_clicked(const QModelIndex &index)
 {
+
     QString val=ui->eventsview->model()->data(index).toString();            // Grab value user clicked in eventsview
     bool isGroupEvent;
     QSqlQuery selectQry;
@@ -611,16 +615,15 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
  * Postconditions:  Query is determined by group clicked; results of query
  *                  populate membersview
 */
-void dashboard::on_groupsview_clicked(const QModelIndex &index)
-{
-    QString val=ui->groupsview->model()->data(index).toString();        // Grab group ID
-
+void dashboard::slot_groupsview_selectedRow(const QItemSelection &, const QItemSelection &) {
+    QModelIndexList selection = ui->groupsview->selectionModel()->selectedRows(); //getting the index of selected rows.
+    QModelIndex current = selection.first(); // getting the first index in selected row list.
+    QString val=ui->groupsview->model()->data(current).toString();        // Grab group ID
     displayResults(ui->membersview, "SELECT username AS \"Members\" "
                                     "FROM innodb.GROUP_MEMBERS, innodb.GROUPS "
                                     "WHERE innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID "
                                     "AND innodb.GROUPS.ID ='" +val+ "'");
-
-    setGroupID(index);      // store groupID
+    setGroupID(current);      // store groupID
     setGroupName();         // store groupName
     updateGroupEvents();    // show all group's events in eventsview
     paintEvents();
@@ -637,6 +640,16 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
     }
 
     // update bulletin view to group specific
+    updateBulletinsView();
+}
+
+/* Purpose:         Slot that contains functions that refreshes online/bulletin view.
+ * Preconditions:   Signal is emitted.
+ * Postconditions:  online/bulletin view is refreshed
+*/
+void dashboard::slot_refreshThread()
+{
+    on_loadonline_clicked();
     updateBulletinsView();
 }
 
@@ -675,6 +688,7 @@ void dashboard::updateEventsView()
                                    "WHERE eventID = ID AND username ='" +myuser+
                                    "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
 }
+
 
 /* Purpose:         Displays all group member's events of a selected
  *                  calendar day in eventsview
@@ -716,7 +730,10 @@ void dashboard::updateGroupEvents()
 */
 void dashboard::updateGroupsView()
 {
-    displayResults(ui->groupsview, "SELECT groupID AS \"Group ID\" FROM innodb.GROUP_MEMBERS WHERE username = '" +myuser+ "'");          // populate associated groups
+    displayResults(ui->groupsview, "SELECT ID AS \"ID\", name AS \"Name\" "
+                                   "FROM innodb.GROUPS, innodb.GROUP_MEMBERS "
+                                   "WHERE ID = groupID "
+                                   "AND username = '" +myuser+ "'");          // populate associated groups
 }
 
 /* Purpose:         Displays all bulletin messages in
