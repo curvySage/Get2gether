@@ -555,75 +555,6 @@ void dashboard::on_loadonline_clicked()
                                    "WHERE status = 1");
 }
 
-/*=================================================================================================================================*/
-
-/*.------------------------.*/
-/*|      Table Views       |*/
-/*'------------------------'*/
-
-/* Purpose:         Displays results of specified query in specified table view
- * Preconditions:   command is a valid SQL query
- *                  command is a relevant query for database: innodb
- * Postconditions:  Query results are inserted into table
-*/
-void dashboard::displayResults(QTableView * table, QString command)
-{
-    //QSqlQueryModel used to execute sql and traverse the results on a view table.
-    QSqlQueryModel * modal = new QSqlQueryModel();
-    QSqlQuery * query = new QSqlQuery(myconn.db);
-
-    query->prepare(command);
-    query->exec();
-    modal->setQuery(*query);
-    table->setModel(modal);
-}
-
-/* Purpose:         Updates eventsview to display current date's events owned
- *                  by current user
- * Postconditions:  Query results are displayed in eventsview
-*/
-// PURPOSE: Updates eventsview based on the selected event day
-void dashboard::updateEventsView()
-{
-    displayResults(ui->eventsview, "SELECT ID AS \"Event ID\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
-                                   "FROM innodb.USER_EVENTS, innodb.EVENTS "
-                                   "WHERE eventID = ID AND username ='" +myuser+
-                                   "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
-}
-
-/* Purpose:         Displays all group member's events of a selected
- *                  calendar day in eventsview
- * Preconditions:   Should be called only when dashboard is in group mode
- *                  groupID must be set (i.e. selected in groupsview)
- * Postconditions:  Updates eventsview with all group member's events
-*/
-void dashboard::updateMemberEvents()
-{
-    displayResults(ui->eventsview, "SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
-                                        "date AS \"Date\", start AS \"Start\", end AS \"End\" "
-                                   "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                                   "WHERE ID = eventID AND "
-                                    "date = '" +ui->calendarWidget->selectedDate().toString()+
-                                    "' AND innodb.USER_EVENTS.username IN (SELECT innodb.GROUP_MEMBERS.username "
-                                                                          "FROM innodb.GROUP_MEMBERS "
-                                                                          "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "') "
-                                   "ORDER BY groupID");        // Update eventsview with all group member's events
-}
-
-/* Purpose:         Updates eventsview to display all group events in
- *                  eventsviews (when you click the groupID)
- * Preconditions:   groupID must be set in order to display all group events in
- *                  eventsview
- * Postconditions:  When group ID is selected in groupsview, all group's events are
- *                  loaded into eventsview
-*/
-void dashboard::updateGroupEvents()
-{
-    displayResults(ui->eventsview, "SELECT ID AS \"Event ID \", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
-                                   "FROM innodb.EVENTS "
-                                   "WHERE groupID = '" +groupID+ "'");
-}
-
 /* Purpose:         Initializes event information form when user clicks
  *                  an event in eventsview
  * Postconditions:  Event info filled is determined by event values
@@ -709,6 +640,76 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
     updateBulletinsView();
 }
 
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Table Views       |*/
+/*'------------------------'*/
+
+/* Purpose:         Displays results of specified query in specified table view
+ * Preconditions:   command is a valid SQL query
+ *                  command is a relevant query for database: innodb
+ * Postconditions:  Query results are inserted into table
+*/
+void dashboard::displayResults(QTableView * table, QString command)
+{
+    //QSqlQueryModel used to execute sql and traverse the results on a view table.
+    QSqlQueryModel * modal = new QSqlQueryModel();
+    QSqlQuery * query = new QSqlQuery(myconn.db);
+
+    query->prepare(command);
+    query->exec();
+    modal->setQuery(*query);
+    table->setModel(modal);
+}
+
+/* Purpose:         Updates eventsview to display current date's events owned
+ *                  by current user
+ * Postconditions:  Query results are displayed in eventsview
+*/
+// PURPOSE: Updates eventsview based on the selected event day
+void dashboard::updateEventsView()
+{
+    displayResults(ui->eventsview, "SELECT ID AS \"Event ID\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
+                                   "FROM innodb.USER_EVENTS, innodb.EVENTS "
+                                   "WHERE eventID = ID AND username ='" +myuser+
+                                   "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
+}
+
+/* Purpose:         Displays all group member's events of a selected
+ *                  calendar day in eventsview
+ * Preconditions:   Should be called only when dashboard is in group mode
+ *                  groupID must be set (i.e. selected in groupsview)
+ * Postconditions:  Updates eventsview with all group member's events
+*/
+void dashboard::updateMemberEvents()
+{
+    displayResults(ui->eventsview, "SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
+                                        "date AS \"Date\", start AS \"Start\", end AS \"End\" "
+                                   "FROM innodb.EVENTS, innodb.USER_EVENTS "
+                                   "WHERE ID = eventID AND "
+                                    "date = '" +ui->calendarWidget->selectedDate().toString()+
+                                    "' AND innodb.USER_EVENTS.username IN (SELECT innodb.GROUP_MEMBERS.username "
+                                                                          "FROM innodb.GROUP_MEMBERS "
+                                                                          "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "') "
+                                   "ORDER BY groupID");        // Update eventsview with all group member's events
+}
+
+/* Purpose:         Updates eventsview to display all group events in
+ *                  eventsviews (when you click the groupID)
+ * Preconditions:   groupID must be set in order to display all group events in
+ *                  eventsview
+ * Postconditions:  When group ID is selected in groupsview, all group's events are
+ *                  loaded into eventsview
+*/
+void dashboard::updateGroupEvents()
+{
+    displayResults(ui->eventsview, "SELECT ID AS \"Event ID \", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
+                                   "FROM innodb.EVENTS "
+                                   "WHERE groupID = '" +groupID+ "'");
+}
+
+
 /* Purpose:         Displays all of the user's associated groups into
  *                  groupsview
  * Postconditions:  All groups user is a part of is displayed in groupsview
@@ -727,7 +728,7 @@ void dashboard::updateBulletinsView()
 {
     QString currentGroup = getGroupID();
 
-    displayResults(ui->bulletinView, "SELECT userID, message "
+    displayResults(ui->bulletinView, "SELECT userID AS \"User\", message AS \"Message\" "
                                      "FROM innodb.BULLETINS where groupID = '"+currentGroup+"'");
 
     // Messages are kept for a week in the database.
@@ -748,7 +749,7 @@ void dashboard::updateRemindersView()
 
     // return events from the current week.
     displayResults(ui->reminders,
-                   "SELECT name AS \"Group\", description AS \"Description\", date AS \"Date\", start AS \"Start\", end  AS \"End\" "
+                   "SELECT name AS \"Group\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end  AS \"End\" "
                    "FROM innodb.EVENTS, innodb.GROUPS "
                    "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.groupID = innodb.GROUPS.ID");
 }
