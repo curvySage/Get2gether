@@ -53,7 +53,7 @@ private slots:
     void updateRemindersView();
     void displayResults(QTableView * table, QString);
     void paint(QDate date, QColor color);
-    void paintEvents();
+    //void paintEvents();
     void clearEditInfo();
     void on_calendarWidget_selectionChanged();
     void on_groupsview_clicked(const QModelIndex &index);

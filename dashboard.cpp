@@ -13,6 +13,7 @@
 #include "dashboard.h"
 #include "invitations.h"
 #include "mythread.h"
+#include "paintCell.h"
 
 /*=================================================================================================================================*/
 //                                          class Dashboard-Specific Methods
@@ -47,7 +48,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
 
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
-    paintEvents();          // paint calendar cells with events
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
     updateGroupsView();
     updateBulletinsView();  // populates bulletins view
@@ -195,7 +196,7 @@ void dashboard::on_homeButton_clicked()
     //Update Userlabel to the username
     updateCalendarName(myuser);
     updateEventsView();
-    paintEvents();                          // Paint personal and group events appropriately
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);                          // Paint personal and group events appropriately
 }
 
 /* Purpose:         Displays new even form used to create events
@@ -251,7 +252,7 @@ void dashboard::on_addevents_clicked()
             updateEventsView();
         }
 
-        paintEvents();
+        paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
     }
 }
 
@@ -356,7 +357,7 @@ void dashboard::on_editEvents_clicked()
                     else updateEventsView();
                 }
 
-                paintEvents();
+                paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
                 clearEditInfo();
             }
         }
@@ -692,7 +693,7 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
     setGroupID(index);      // store groupID
     setGroupName();         // store groupName
     updateGroupEvents();    // show all group's events in eventsview
-    paintEvents();
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
 
     // To update calendar label
     QSqlQuery selectQryName;
@@ -784,7 +785,7 @@ void dashboard::on_networktabs_currentChanged(int index)
         resetGroupAttributes();
         setMode(false);
         updateEventsView();
-        paintEvents();
+        paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
         updateCalendarName(myuser); //
     }
     else
@@ -859,108 +860,6 @@ void dashboard::paint(QDate date, QColor color)
     ui->calendarWidget->setDateTextFormat(date, charFormat);
 }
 
-/* Purpose:         Paints all cells with events in database green
- * Postconditions:  Calendar cells with associated events are green
-*/
-void dashboard::paintEvents()
-{
-    QDate date;
-    QSqlQuery *query = new QSqlQuery(myconn.db);    // used to query DB
-    bool isGroupEvent, isThisGroupEvent;
-
-    /* If in personal mode,
-     *      Prepare query using only logged in user
-     * Else in group mode,
-     *      Select each group member's username in group
-     *      Accumulate union select query based on current group
-     *          member and selected calendar day
-    */
-    if(!isGroupMode)
-    {
-        query->prepare("SELECT date, groupID "
-                       "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                       "WHERE eventID = ID AND username ='" +myuser+
-                       "' ORDER BY groupID");       // returns events
-    }
-    else
-    {
-        QSqlQuery selectMemberQ;
-        QString groupMember, qResult;
-
-        selectMemberQ.prepare("SELECT username "
-                              "FROM innodb.GROUP_MEMBERS "
-                              "WHERE groupID = '" +groupID+
-                              "' AND username != '" +myuser+ "'");
-
-        qResult = "(SELECT date, groupID "
-                  "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                  "WHERE username = '" +myuser+ "' AND eventID = ID) ";
-
-        /* If member select query executes,
-         *      Grab each member's username
-         *      Accumulate union select query for current member
-         *          grabbing event date to paint
-        */
-        if(selectMemberQ.exec() && selectMemberQ.first())
-        {
-            do
-            {
-                groupMember = selectMemberQ.value(0).toString();
-                qResult += "UNION (SELECT date, groupID "
-                           "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                           "WHERE username = '" +groupMember+
-                           "' AND eventID = ID) ";
-            }while(selectMemberQ.next());
-
-            qResult += "ORDER BY groupID";      // Order by groupID to have all group events at the end
-                                                //  of the query so that group events are painted cyan
-                                                //  even if personal events happen to be on the same day
-            query->prepare(qResult);            // Prepare paint query using accumulated query
-        }
-    }
-
-    query->exec();
-    query->first();     // accesses first query result
-
-    /* Paint every cell with an associated event
-     * until end of query
-    */
-    do{
-        date = QDate::fromString(query->value(0).toString(), "ddd MMM d yyyy"); // parse query to identify date
-        isGroupEvent = (query->value(1).toInt() != 0);
-        isThisGroupEvent = isGroupEvent && (query->value(1).toString() == groupID);
-
-        /* If dashboard is in group mode,
-         *      If event to color is selected group's event,
-         *          Paint cyan
-         *      Else, it's group member's personal event,
-         *          Paint green
-         * Else, in personal mode
-         *      If event is a group event,
-         *          Paint cyan
-         *      Else, personal event only
-         *          Paint green
-        */
-        if(isGroupMode)
-        {
-            if(resetStatus == true)
-            {
-                paint(date, Qt::white);
-            }
-            else
-            {
-                if(isThisGroupEvent) paint(date, Qt::cyan);
-                else paint(date, Qt::green);
-            }
-        }
-        else
-        {            
-            if(isGroupEvent) paint(date, Qt::cyan);
-            else paint(date, Qt::green);                                                 // paint parsed date cell green
-        }
-
-    }while(query->next());                                                    // move to next query result
-}
 
 
 /* Purpose:             Disconnects group calendar connections
@@ -973,7 +872,7 @@ void dashboard::paintEvents()
 void dashboard::resetGroupAttributes()
 {
     resetStatus = true;
-    paintEvents();
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
     resetStatus = false;
     groupID = "0";     // Reset groupID
     groupName = "";
