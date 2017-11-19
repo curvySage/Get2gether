@@ -605,6 +605,7 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
                                     "WHERE innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID "
                                     "AND innodb.GROUPS.ID ='" +val+ "'");
 
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,true,myuser,groupID,myconn);
     setGroupID(index);      // store groupID
     setGroupName();         // store groupName
     updateGroupEvents();    // show all group's events in eventsview
