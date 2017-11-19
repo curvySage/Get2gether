@@ -14,6 +14,7 @@
 #include "invitations.h"
 #include "mythread.h"
 #include "paintCell.h"
+#include "delete.h"
 
 /*=================================================================================================================================*/
 //                                          class Dashboard-Specific Methods
@@ -378,125 +379,39 @@ void dashboard::on_editEvents_clicked()
 */
 void dashboard::on_deleteEvents_clicked()
 {
-    QSqlQuery isGroupEventQ;                                    // To select groupID of returned event
     QString ID_Param = ui->ID_Label->text();
-    QString matchuser = ui->NameDisplay->text();                // Get event owner
-    bool isGroupEvent;                                          // to determine if group event
+    QString matchuser = ui->NameDisplay->text();                // Get event owner or owner's name
+    QString currentuser = myuser; // Grabbing the user's log in name.
+    QString TheGroup = groupName;
+    QDate currDate = ui->dateEdit->date();
+    QString GroupID = groupID;
 
-    isGroupEventQ.exec("SELECT groupID "
-                       "FROM innodb.EVENTS "
-                       "WHERE ID = '" + ID_Param+ "'");
-    isGroupEventQ.first();
-    isGroupEvent = (isGroupEventQ.value(0).toInt() != 0);       // Determine if group event (i.e. groupID != 0)
 
-    /* If event is a group event but in personal mode,
-     *      Output error
+    int option = Delete::Do_Delete(ID_Param, matchuser, currentuser, isGroupMode, currDate, TheGroup, GroupID);
+    if(option == 1){
+        updateEventsView();
+    }
+    else if (option == 2){
+        updateMemberEvents();
+    }
+    QSqlQuery query_count;
+    // count today's events to determine whether today's cell
+    // should still be colored or not
+    query_count.exec("SELECT COUNT(*) "
+                     "FROM innodb.EVENTS, innodb.USER_EVENTS "
+                     "WHERE date = '" +currDate.toString()+
+                     "' AND ID = eventiD AND username ='" +currentuser+ "'");
+    query_count.first();
+    int eventCount = query_count.value(0).toInt();
+
+    /* If today has no more events
+     *    Paint today's cell white
     */
-    if(isGroupEvent && !isGroupMode)
-    {
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Sorry, but you can't delete group event from personal calendar!");
-        MsgBox.exec();
+    if(eventCount == 0)
+        paint(currDate, Qt::white);     // paint back to default color
 
-        qDebug("Deletion failed : group event must be deleted from group calendar.");
+    clearEditInfo();                // clear edit info
 
-        return;
-    }
-
-    /* If logged in user matches event owner
-     *      Delete event
-     * Else
-     *      Print error
-    */
-    if(myuser == matchuser || groupName == matchuser)
-    {
-        QMessageBox::StandardButton choice;
-        choice = QMessageBox::warning(this,"Delete Event?", "Are you sure you want to delete your event?",QMessageBox::Yes | QMessageBox::No);
-
-        /* If user selects Yes,
-        *      Query database removing selected event
-        */
-        if (choice == QMessageBox::Yes) {
-            QSqlQuery query_delete, query_count;
-            QDate currDate = ui->dateEdit->date();
-            int eventCount;
-
-            /* First, delete USER_EVENT eventID fk reference:
-             * If not in group mode,
-             *      Delete user event entry regularly
-             * Else,
-             *      Cycle through each group member
-             *          Delete user event entry
-            */
-            if(!isGroupMode)
-            {
-                // update USER_EVENTS table
-                query_delete.exec("DELETE FROM innodb.USER_EVENTS "
-                                  "WHERE eventID ='" +ID_Param+
-                                  "' AND username ='" +myuser+ "'");
-
-                updateEventsView();
-            }
-            else
-            {
-                QSqlQuery selectMemberQ;
-                QString groupMember;
-
-                selectMemberQ.prepare("SELECT username "
-                                      "FROM innodb.GROUP_MEMBERS "
-                                      "WHERE groupID = '" +groupID+ "'");
-
-                if(selectMemberQ.exec() && selectMemberQ.first())
-                {
-                    do
-                    {
-                     groupMember = selectMemberQ.value(0).toString();
-                     query_delete.exec("DELETE FROM innodb.USER_EVENTS "
-                                       "WHERE username = '" +groupMember+
-                                       "' AND eventID = '" +ID_Param+ "'");
-                    }while(selectMemberQ.next());
-                }
-
-                // Print query status
-                if(query_delete.isActive())
-                {
-                    qDebug("Deletion successful.");
-                }
-                else
-                {
-                    qDebug() << query_delete.lastError().text();
-                }
-
-                updateMemberEvents();
-            }
-
-        // count today's events to determine whether today's cell
-        // should still be colored or not
-        query_count.exec("SELECT COUNT(*) "
-                         "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                         "WHERE date = '" +currDate.toString()+
-                         "' AND ID = eventiD AND username ='" +myuser+ "'");
-        query_count.first();
-        eventCount = query_count.value(0).toInt();
-
-        /* If today has no more events
-         *    Paint today's cell white
-        */
-        if(eventCount == 0)
-            paint(currDate, Qt::white);     // paint back to default color
-
-        clearEditInfo();                // clear edit info
-        }
-    }
-    else
-    {
-        // Output error message
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Sorry, but you can't delete other's schedules!");
-        MsgBox.exec();
-    }
 }
 
 /* Purpose:         slot for when user sends a message
