@@ -264,7 +264,7 @@ void dashboard::on_addevents_clicked()
 */
 void dashboard::on_editEvents_clicked()
 {
-    if(ui->NameDisplay->pixmap() == 0){
+    if(ui->NameDisplay->text().isEmpty()){
         checkNoDateEvent();
         return;
     }
@@ -384,7 +384,7 @@ void dashboard::on_editEvents_clicked()
 */
 void dashboard::on_deleteEvents_clicked()
 {
-    if(ui->NameDisplay->pixmap() == 0){
+    if(ui->NameDisplay->text().isEmpty()){
         checkNoDateEvent();
         return;
     }
@@ -683,9 +683,10 @@ void dashboard::updateRemindersView()
 
     // return events from the current week.
     displayResults(ui->reminders,
-                   "SELECT name AS \"Group\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end  AS \"End\" "
-                   "FROM innodb.EVENTS, innodb.GROUPS "
-                   "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.groupID = innodb.GROUPS.ID");
+                   "SELECT ID, groupID, description, date, start, end "
+                   "FROM innodb.EVENTS "
+                   "WHERE yearweek = '"+yearweek+"' AND ID = 0 OR ID "
+                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE username = '"+myuser+"')");
 }
 
 /*=================================================================================================================================*/
