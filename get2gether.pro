@@ -34,7 +34,9 @@ SOURCES += \
     connection.cpp \
     dialog.cpp \
     grouppopup.cpp \
-    mythread.cpp
+    mythread.cpp \
+    delete.cpp \
+    paintCell.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -42,7 +44,9 @@ HEADERS += \
     connection.h \
     dialog.h \
     grouppopup.h \
-    mythread.h
+    mythread.h \
+    delete.h \
+    paintCell.h
 
 FORMS += \
         mainwindow.ui \
@@ -52,9 +56,7 @@ FORMS += \
 
 RC_ICONS = get2gether_icon.ico
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/mac/lib/release/ -lmysqlclient.18
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/mac/lib/debug/ -lmysqlclient.18
-else:unix: LIBS += -L$$PWD/connector/mac/lib/ -lmysqlclient.18
+unix|win32: LIBS += -L$$PWD/connector/lib/opt/ -lmysqlcppconn
 
 INCLUDEPATH += $$PWD/connector/mac/include
 DEPENDPATH += $$PWD/connector/mac/include
