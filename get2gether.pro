@@ -34,7 +34,9 @@ SOURCES += \
     connection.cpp \
     dialog.cpp \
     grouppopup.cpp \
-    mythread.cpp
+    mythread.cpp \
+    edit.cpp \
+    display.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -42,7 +44,9 @@ HEADERS += \
     connection.h \
     dialog.h \
     grouppopup.h \
-    mythread.h
+    mythread.h \
+    edit.h \
+    display.h
 
 FORMS += \
         mainwindow.ui \

@@ -2,6 +2,7 @@
 #define MYTHREAD_H
 #include <QtCore>
 #include <QThread>
+#include <QTableView>
 
 // PURPOSE: This class is used to run a thread.
 class MyThread : public QThread

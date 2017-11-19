@@ -1,3 +1,4 @@
+#include "display.h"
 #include "mythread.h"
 
 /*=================================================================================================================================*/
@@ -17,7 +18,9 @@ MyThread::MyThread(QObject * pObj) {
     // in dashboard that calls the update view functions.
 
     // This one just updates the bulletin view.
+    qDebug() << "Before connector";
     connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(updateBulletinsView()));
+    qDebug() << "After connector";
 }
 
 /*=================================================================================================================================*/
