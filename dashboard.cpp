@@ -549,7 +549,7 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
     groupName = ui->groupsview->model()->index(rowidx , 1).data().toString();
     updateCalendarName("# " + groupName);
 
-    paintEvents();
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);          // paint calendar cells with events
     updateGroupEvents();    // show all group's events in eventsview
     displayResults(ui->membersview, "SELECT username AS \"Members\" "
                                     "FROM innodb.GROUP_MEMBERS "
