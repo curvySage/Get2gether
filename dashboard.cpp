@@ -13,6 +13,8 @@
 #include "dashboard.h"
 #include "invitations.h"
 #include "mythread.h"
+#include "paintCell.h"
+#include "delete.h"
 
 /*=================================================================================================================================*/
 //                                          class Dashboard-Specific Methods
@@ -47,7 +49,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
 
     /*-- On Load --*/
     displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
-    paintEvents();          // paint calendar cells with events
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
     updateGroupsView();
     updateBulletinsView();  // populates bulletins view
@@ -195,7 +197,7 @@ void dashboard::on_homeButton_clicked()
     //Update Userlabel to the username
     updateCalendarName(myuser);
     updateEventsView();
-    paintEvents();                          // Paint personal and group events appropriately
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);                          // Paint personal and group events appropriately
 }
 
 /* Purpose:         Displays new even form used to create events
@@ -252,7 +254,7 @@ void dashboard::on_addevents_clicked()
             updateEventsView();
         }
 
-        paintEvents();
+        paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
     }
 }
 
@@ -262,6 +264,10 @@ void dashboard::on_addevents_clicked()
 */
 void dashboard::on_editEvents_clicked()
 {
+    if(ui->NameDisplay->pixmap() == 0){
+        checkNoDateEvent();
+        return;
+    }
     QString matchuser = ui->NameDisplay->text();                // Get event owner
     QDate originalDate = ui->calendarWidget->selectedDate();    // To compare if date changed
     QString ID_Param = ui->ID_Label->text();
@@ -357,7 +363,7 @@ void dashboard::on_editEvents_clicked()
                     else updateEventsView();
                 }
 
-                paintEvents();
+                paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
                 clearEditInfo();
             }
         }
@@ -378,125 +384,44 @@ void dashboard::on_editEvents_clicked()
 */
 void dashboard::on_deleteEvents_clicked()
 {
-    QSqlQuery isGroupEventQ;                                    // To select groupID of returned event
-    QString ID_Param = ui->ID_Label->text();
-    QString matchuser = ui->NameDisplay->text();                // Get event owner
-    bool isGroupEvent;                                          // to determine if group event
-
-    isGroupEventQ.exec("SELECT groupID "
-                       "FROM innodb.EVENTS "
-                       "WHERE ID = '" + ID_Param+ "'");
-    isGroupEventQ.first();
-    isGroupEvent = (isGroupEventQ.value(0).toInt() != 0);       // Determine if group event (i.e. groupID != 0)
-
-    /* If event is a group event but in personal mode,
-     *      Output error
-    */
-    if(isGroupEvent && !isGroupMode)
-    {
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Sorry, but you can't delete group event from personal calendar!");
-        MsgBox.exec();
-
-        qDebug("Deletion failed : group event must be deleted from group calendar.");
-
+    if(ui->NameDisplay->pixmap() == 0){
+        checkNoDateEvent();
         return;
     }
 
-    /* If logged in user matches event owner
-     *      Delete event
-     * Else
-     *      Print error
+    QString ID_Param = ui->ID_Label->text();
+    QString matchuser = ui->NameDisplay->text();                // Get event owner or owner's name
+    QString currentuser = myuser; // Grabbing the user's log in name.
+    QString TheGroup = groupName;
+    QDate currDate = ui->dateEdit->date();
+    QString GroupID = groupID;
+
+
+    int option = Delete::Do_Delete(ID_Param, matchuser, currentuser, isGroupMode, currDate, TheGroup, GroupID);
+    if(option == 1){
+        updateEventsView();
+    }
+    else if (option == 2){
+        updateMemberEvents();
+    }
+    QSqlQuery query_count;
+    // count today's events to determine whether today's cell
+    // should still be colored or not
+    query_count.exec("SELECT COUNT(*) "
+                     "FROM innodb.EVENTS, innodb.USER_EVENTS "
+                     "WHERE date = '" +currDate.toString()+
+                     "' AND ID = eventiD AND username ='" +currentuser+ "'");
+    query_count.first();
+    int eventCount = query_count.value(0).toInt();
+
+    /* If today has no more events
+     *    Paint today's cell white
     */
-    if(myuser == matchuser || groupName == matchuser)
-    {
-        QMessageBox::StandardButton choice;
-        choice = QMessageBox::warning(this,"Delete Event?", "Are you sure you want to delete your event?",QMessageBox::Yes | QMessageBox::No);
+    if(eventCount == 0)
+        paint(currDate, Qt::white);     // paint back to default color
 
-        /* If user selects Yes,
-        *      Query database removing selected event
-        */
-        if (choice == QMessageBox::Yes) {
-            QSqlQuery query_delete, query_count;
-            QDate currDate = ui->dateEdit->date();
-            int eventCount;
+    clearEditInfo();                // clear edit info
 
-            /* First, delete USER_EVENT eventID fk reference:
-             * If not in group mode,
-             *      Delete user event entry regularly
-             * Else,
-             *      Cycle through each group member
-             *          Delete user event entry
-            */
-            if(!isGroupMode)
-            {
-                // update USER_EVENTS table
-                query_delete.exec("DELETE FROM innodb.USER_EVENTS "
-                                  "WHERE eventID ='" +ID_Param+
-                                  "' AND username ='" +myuser+ "'");
-
-                updateEventsView();
-            }
-            else
-            {
-                QSqlQuery selectMemberQ;
-                QString groupMember;
-
-                selectMemberQ.prepare("SELECT username "
-                                      "FROM innodb.GROUP_MEMBERS "
-                                      "WHERE groupID = '" +groupID+ "'");
-
-                if(selectMemberQ.exec() && selectMemberQ.first())
-                {
-                    do
-                    {
-                     groupMember = selectMemberQ.value(0).toString();
-                     query_delete.exec("DELETE FROM innodb.USER_EVENTS "
-                                       "WHERE username = '" +groupMember+
-                                       "' AND eventID = '" +ID_Param+ "'");
-                    }while(selectMemberQ.next());
-                }
-
-                // Print query status
-                if(query_delete.isActive())
-                {
-                    qDebug("Deletion successful.");
-                }
-                else
-                {
-                    qDebug() << query_delete.lastError().text();
-                }
-
-                updateMemberEvents();
-            }
-
-        // count today's events to determine whether today's cell
-        // should still be colored or not
-        query_count.exec("SELECT COUNT(*) "
-                         "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                         "WHERE date = '" +currDate.toString()+
-                         "' AND ID = eventiD AND username ='" +myuser+ "'");
-        query_count.first();
-        eventCount = query_count.value(0).toInt();
-
-        /* If today has no more events
-         *    Paint today's cell white
-        */
-        if(eventCount == 0)
-            paint(currDate, Qt::white);     // paint back to default color
-
-        clearEditInfo();                // clear edit info
-        }
-    }
-    else
-    {
-        // Output error message
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Sorry, but you can't delete other's schedules!");
-        MsgBox.exec();
-    }
 }
 
 /* Purpose:         slot for when user sends a message
@@ -794,7 +719,7 @@ void dashboard::on_networktabs_currentChanged(int index)
         resetGroupAttributes();
         setMode(false);
         updateEventsView();
-        paintEvents();
+        paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
         updateCalendarName(myuser); //
     }
     else
@@ -881,108 +806,6 @@ void dashboard::paint(QDate date, QColor color)
     ui->calendarWidget->setDateTextFormat(date, charFormat);
 }
 
-/* Purpose:         Paints all cells with events in database green
- * Postconditions:  Calendar cells with associated events are green
-*/
-void dashboard::paintEvents()
-{
-    QDate date;
-    QSqlQuery *query = new QSqlQuery(myconn.db);    // used to query DB
-    bool isGroupEvent, isThisGroupEvent;
-
-    /* If in personal mode,
-     *      Prepare query using only logged in user
-     * Else in group mode,
-     *      Select each group member's username in group
-     *      Accumulate union select query based on current group
-     *          member and selected calendar day
-    */
-    if(!isGroupMode)
-    {
-        query->prepare("SELECT date, groupID "
-                       "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                       "WHERE eventID = ID AND username ='" +myuser+
-                       "' ORDER BY groupID");       // returns events
-    }
-    else
-    {
-        QSqlQuery selectMemberQ;
-        QString groupMember, qResult;
-
-        selectMemberQ.prepare("SELECT username "
-                              "FROM innodb.GROUP_MEMBERS "
-                              "WHERE groupID = '" +groupID+
-                              "' AND username != '" +myuser+ "'");
-
-        qResult = "(SELECT date, groupID "
-                  "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                  "WHERE username = '" +myuser+ "' AND eventID = ID) ";
-
-        /* If member select query executes,
-         *      Grab each member's username
-         *      Accumulate union select query for current member
-         *          grabbing event date to paint
-        */
-        if(selectMemberQ.exec() && selectMemberQ.first())
-        {
-            do
-            {
-                groupMember = selectMemberQ.value(0).toString();
-                qResult += "UNION (SELECT date, groupID "
-                           "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                           "WHERE username = '" +groupMember+
-                           "' AND eventID = ID) ";
-            }while(selectMemberQ.next());
-
-            qResult += "ORDER BY groupID";      // Order by groupID to have all group events at the end
-                                                //  of the query so that group events are painted cyan
-                                                //  even if personal events happen to be on the same day
-            query->prepare(qResult);            // Prepare paint query using accumulated query
-        }
-    }
-
-    query->exec();
-    query->first();     // accesses first query result
-
-    /* Paint every cell with an associated event
-     * until end of query
-    */
-    do{
-        date = QDate::fromString(query->value(0).toString(), "ddd MMM d yyyy"); // parse query to identify date
-        isGroupEvent = (query->value(1).toInt() != 0);
-        isThisGroupEvent = isGroupEvent && (query->value(1).toString() == groupID);
-
-        /* If dashboard is in group mode,
-         *      If event to color is selected group's event,
-         *          Paint cyan
-         *      Else, it's group member's personal event,
-         *          Paint green
-         * Else, in personal mode
-         *      If event is a group event,
-         *          Paint cyan
-         *      Else, personal event only
-         *          Paint green
-        */
-        if(isGroupMode)
-        {
-            if(resetStatus == true)
-            {
-                paint(date, Qt::white);
-            }
-            else
-            {
-                if(isThisGroupEvent) paint(date, Qt::cyan);
-                else paint(date, Qt::green);
-            }
-        }
-        else
-        {            
-            if(isGroupEvent) paint(date, Qt::cyan);
-            else paint(date, Qt::green);                                                 // paint parsed date cell green
-        }
-
-    }while(query->next());                                                    // move to next query result
-}
 
 
 /* Purpose:             Disconnects group calendar connections
@@ -995,7 +818,7 @@ void dashboard::paintEvents()
 void dashboard::resetGroupAttributes()
 {
     resetStatus = true;
-    paintEvents();
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
     resetStatus = false;
     groupID = "0";     // Reset groupID
     groupName = "";
@@ -1015,3 +838,14 @@ void dashboard::closeEvent(QCloseEvent * e) {
     }
 }
 
+/* Purpose: Checks to see if there is an event selected
+ * Postconditions: Returns an error if the user did not select an event to
+ * delete or edit the event.
+ */
+void dashboard::checkNoDateEvent()
+{
+        QMessageBox MsgBox;
+        MsgBox.setWindowTitle("Where is your event?");
+        MsgBox.setText("No Event was selected. Try Again.");
+        MsgBox.exec();
+}

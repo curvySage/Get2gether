@@ -34,7 +34,9 @@ SOURCES += \
     connection.cpp \
     dialog.cpp \
     grouppopup.cpp \
-    mythread.cpp
+    mythread.cpp \
+    delete.cpp \
+    paintCell.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -42,7 +44,9 @@ HEADERS += \
     connection.h \
     dialog.h \
     grouppopup.h \
-    mythread.h
+    mythread.h \
+    delete.h \
+    paintCell.h
 
 FORMS += \
         mainwindow.ui \

@@ -62,11 +62,13 @@ private slots:
     void updateMemberEvents();
     void updateGroupEvents();
     void paint(QDate date, QColor color);
-    void paintEvents();
+    //void paintEvents();
     void clearEditInfo();
     void displayResults(QTableView * table, QString);
     void resetGroupAttributes();
     void slot_refreshThread();
+    void checkNoDateEvent();
+    //void on_onlineview_clicked(const QModelIndex &index);
 };
 
 #endif // DASHBOARD_H
