@@ -56,10 +56,10 @@ FORMS += \
 
 RC_ICONS = get2gether_icon.ico
 
-unix|win32: LIBS += -L$$PWD/connector/lib/opt/ -lmysqlcppconn
-
-INCLUDEPATH += $$PWD/connector/mac/include
-DEPENDPATH += $$PWD/connector/mac/include
-
 RESOURCES += \
     assets.qrc
+
+win32: LIBS += -L$$PWD/connector/windows/lib/opt/ -lmysqlcppconn
+
+INCLUDEPATH += $$PWD/connector/windows/lib/opt
+DEPENDPATH += $$PWD/connector/windows/lib/opt
