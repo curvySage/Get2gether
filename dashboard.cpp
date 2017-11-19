@@ -263,6 +263,10 @@ void dashboard::on_addevents_clicked()
 */
 void dashboard::on_editEvents_clicked()
 {
+    if(ui->NameDisplay->pixmap() == 0){
+        checkNoDateEvent();
+        return;
+    }
     QString matchuser = ui->NameDisplay->text();                // Get event owner
     QDate originalDate = ui->calendarWidget->selectedDate();    // To compare if date changed
     QString ID_Param = ui->ID_Label->text();
@@ -379,6 +383,11 @@ void dashboard::on_editEvents_clicked()
 */
 void dashboard::on_deleteEvents_clicked()
 {
+    if(ui->NameDisplay->pixmap() == 0){
+        checkNoDateEvent();
+        return;
+    }
+
     QString ID_Param = ui->ID_Label->text();
     QString matchuser = ui->NameDisplay->text();                // Get event owner or owner's name
     QString currentuser = myuser; // Grabbing the user's log in name.
@@ -547,6 +556,7 @@ void dashboard::updateGroupEvents()
 */
 void dashboard::on_eventsview_clicked(const QModelIndex &index)
 {
+
     QString val=ui->eventsview->model()->data(index).toString();            // Grab value user clicked in eventsview
     bool isGroupEvent;
     QSqlQuery selectQry;
@@ -795,4 +805,16 @@ void dashboard::resetGroupAttributes()
     // Disconnect group calendar functions
     disconnect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateMemberEvents()));
     disconnect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateMemberEvents()));
+}
+
+/* Purpose: Checks to see if there is an event selected
+ * Postconditions: Returns an error if the user did not select an event to
+ * delete or edit the event.
+ */
+void dashboard::checkNoDateEvent()
+{
+        QMessageBox MsgBox;
+        MsgBox.setWindowTitle("Where is your event?");
+        MsgBox.setText("No Event was selected. Try Again.");
+        MsgBox.exec();
 }

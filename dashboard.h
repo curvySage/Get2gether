@@ -63,6 +63,7 @@ private slots:
     void on_networktabs_currentChanged(int index);
     void on_homeButton_clicked();
     void resetGroupAttributes();
+    void checkNoDateEvent();
     //void on_onlineview_clicked(const QModelIndex &index);
 };
 
