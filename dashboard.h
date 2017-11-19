@@ -47,8 +47,8 @@ private slots:
     void on_createGroup_clicked();
     void on_sendButton_clicked();
     void on_homeButton_clicked();
+    void on_groupsview_clicked(const QModelIndex &index);
     void on_eventsview_clicked(const QModelIndex &index);
-    void slot_groupsview_selectedRow(const QItemSelection &, const QItemSelection &);
     void on_calendarWidget_selectionChanged();
     void on_messageBox_textChanged();
     void on_networktabs_currentChanged(int index);

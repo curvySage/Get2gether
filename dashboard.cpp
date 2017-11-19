@@ -57,7 +57,6 @@ dashboard::dashboard(QString u, QWidget *parent) :
     /*-- Signals & Slots --*/
     QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
     QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateEventsView()));           // update eventsview for selected date
-    QObject::connect(ui->groupsview->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)), SLOT(slot_groupsview_selectedRow(const QItemSelection &, const QItemSelection &)));
 }
 
 /*=================================================================================================================================*/
@@ -566,7 +565,9 @@ void dashboard::on_loadonline_clicked()
 void dashboard::on_eventsview_clicked(const QModelIndex &index)
 {
 
-    QString val=ui->eventsview->model()->data(index).toString();            // Grab value user clicked in eventsview
+    int rowidx = index.row();
+
+    QString val=ui->eventsview->model()->index(rowidx , 0).data().toString();            // Grab value user clicked in eventsview
     bool isGroupEvent;
     QSqlQuery selectQry;
     selectQry.prepare("SELECT username, ID, date, description, start, end, groupID "
@@ -615,15 +616,16 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
  * Postconditions:  Query is determined by group clicked; results of query
  *                  populate membersview
 */
-void dashboard::slot_groupsview_selectedRow(const QItemSelection &, const QItemSelection &) {
-    QModelIndexList selection = ui->groupsview->selectionModel()->selectedRows(); //getting the index of selected rows.
-    QModelIndex current = selection.first(); // getting the first index in selected row list.
-    QString val=ui->groupsview->model()->data(current).toString();        // Grab group ID
+void dashboard::on_groupsview_clicked(const QModelIndex &index)
+{
+    int rowidx = index.row();
+
+    QString val=ui->groupsview->model()->index(rowidx , 0).data().toString();        // Grab group ID
     displayResults(ui->membersview, "SELECT username AS \"Members\" "
                                     "FROM innodb.GROUP_MEMBERS, innodb.GROUPS "
                                     "WHERE innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID "
                                     "AND innodb.GROUPS.ID ='" +val+ "'");
-    setGroupID(current);      // store groupID
+    groupID = val;
     setGroupName();         // store groupName
     updateGroupEvents();    // show all group's events in eventsview
     paintEvents();
@@ -642,6 +644,7 @@ void dashboard::slot_groupsview_selectedRow(const QItemSelection &, const QItemS
     // update bulletin view to group specific
     updateBulletinsView();
 }
+
 
 /* Purpose:         Slot that contains functions that refreshes online/bulletin view.
  * Preconditions:   Signal is emitted.
