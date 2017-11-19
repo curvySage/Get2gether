@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QSqlError>
 #include <QPlainTextEdit>
+#include <QMessageBox>
 #include "dashboard.h"
 #include "dialog.h"
 #include "ui_dialog.h"
@@ -212,7 +213,17 @@ void Dialog::on_description_textChanged()
 
     // get message length. then update display count.
     QString lettercount = QString::number(ui->description->toPlainText().length());
-    ui->count->setText(lettercount + " / 50");
+    ui->count->setText(lettercount + " / " + QString::number(MAX));
+
+    // validation check if user pastes in input that is over 50.
+    if (ui->description->toPlainText().length() > MAX + 1) {
+        QMessageBox MsgBox;
+        MsgBox.setWindowTitle("Error");
+        MsgBox.setText("Your input is over the character limit.");
+        MsgBox.exec();
+
+        ui->description->clear();
+    }
 
     // if message is over 50, limit it
     if (ui->description->toPlainText().length() > MAX) {

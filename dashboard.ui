@@ -66,7 +66,7 @@
     <bool>true</bool>
    </attribute>
    <attribute name="verticalHeaderVisible">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
   </widget>
   <widget class="QPushButton" name="addevents">
@@ -335,14 +335,14 @@
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QLabel" name="ID_Label">
-          <property name="text">
-           <string>ID</string>
-          </property>
-         </widget>
-        </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="ID_Label">
+        <property name="text">
+         <string>ID: </string>
+        </property>
+       </widget>
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -479,6 +479,9 @@ p, li { white-space: pre-wrap; }
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
+     <property name="textElideMode">
+      <enum>Qt::ElideRight</enum>
+     </property>
      <property name="showGrid">
       <bool>false</bool>
      </property>
@@ -527,6 +530,9 @@ p, li { white-space: pre-wrap; }
        <width>251</width>
        <height>51</height>
       </rect>
+     </property>
+     <property name="contextMenuPolicy">
+      <enum>Qt::NoContextMenu</enum>
      </property>
      <property name="tabChangesFocus">
       <bool>false</bool>

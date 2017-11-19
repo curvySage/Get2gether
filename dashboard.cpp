@@ -662,8 +662,7 @@ void dashboard::displayResults(QTableView * table, QString command)
     QSqlQueryModel * modal = new QSqlQueryModel();
     QSqlQuery * query = new QSqlQuery(myconn.db);
 
-    query->prepare(command);
-    query->exec();
+    query->exec(command);
     modal->setQuery(*query);
     table->setModel(modal);
 }
@@ -739,7 +738,8 @@ void dashboard::updateBulletinsView()
 
     displayResults(ui->bulletinView, "SELECT userID AS \"User\", message AS \"Message\" "
                                      "FROM innodb.BULLETINS where groupID = '"+currentGroup+"'");
-
+    //ui->bulletinView->resizeRowsToContents();
+    //DATE_FORMAT(date,'%m/%d/%y') DATEONLY,
     // Messages are kept for a week in the database.
     // Messages are deleted every Monday at 1:00AM
     // All messages are automatically deleted using an event scheduler in the database.
@@ -821,13 +821,25 @@ void dashboard::on_messageBox_textChanged()
 
     // get message length. then update display count.
     QString lettercount = QString::number(ui->messageBox->toPlainText().length());
-    ui->count->setText(lettercount + " / 100");
-
+    ui->count->setText(lettercount + " / " + QString::number(MAX));
     // if message is over 100, limit it
+
+    // validation check if user pastes in input that is over 100.
+    if (ui->messageBox->toPlainText().length() > MAX + 1) {
+        QMessageBox MsgBox;
+        MsgBox.setWindowTitle("Error");
+        MsgBox.setText("Your input is over the character limit.");
+        MsgBox.exec();
+
+        ui->messageBox->clear();
+    }
+
+    // validation check if users types over 100 characters.
     if (ui->messageBox->toPlainText().length() > MAX) {
         ui->messageBox->textCursor().deletePreviousChar();
     }
-    // if message is 100, change label to red.
+
+    // if message is 100, change label to red, else back to black.
     if (ui->messageBox->toPlainText().length() == MAX) {
         ui->count->setStyleSheet("color: red;");
     }
@@ -991,3 +1003,15 @@ void dashboard::resetGroupAttributes()
     disconnect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateMemberEvents()));
     disconnect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateMemberEvents()));
 }
+
+void dashboard::closeEvent(QCloseEvent * e) {
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Confirm",
+                                                                tr("Are you sure you want to exit?\n"),
+                                                                QMessageBox::Cancel | QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes) {
+        e->ignore();
+    } else {
+        e->accept();
+    }
+}
+

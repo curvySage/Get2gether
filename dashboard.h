@@ -39,6 +39,9 @@ public:
 private:
     Ui::dashboard *ui;
 
+protected:
+    void closeEvent(QCloseEvent * e);
+
 private slots:
     void on_loadonline_clicked();
     void on_addevents_clicked();
