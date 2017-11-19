@@ -620,26 +620,15 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
 {
     int rowidx = index.row();
 
-    QString val=ui->groupsview->model()->index(rowidx , 0).data().toString();        // Grab group ID
-    displayResults(ui->membersview, "SELECT username AS \"Members\" "
-                                    "FROM innodb.GROUP_MEMBERS, innodb.GROUPS "
-                                    "WHERE innodb.GROUP_MEMBERS.groupID = innodb.GROUPS.ID "
-                                    "AND innodb.GROUPS.ID ='" +val+ "'");
-    groupID = val;
-    setGroupName();         // store groupName
-    updateGroupEvents();    // show all group's events in eventsview
-    paintEvents();
+    groupID = ui->groupsview->model()->index(rowidx , 0).data().toString();
+    groupName = ui->groupsview->model()->index(rowidx , 1).data().toString();
+    updateCalendarName("# " + groupName);
 
-    // To update calendar label
-    QSqlQuery selectQryName;
-    selectQryName.prepare("SELECT name "
-                          "FROM innodb.GROUPS "
-                          "WHERE innodb.GROUPS.ID='"+val+"'");
-    if(selectQryName.exec()){
-        while(selectQryName.next()){
-        updateCalendarName("# " + selectQryName.value(0).toString());
-        }
-    }
+    paintEvents();
+    updateGroupEvents();    // show all group's events in eventsview
+    displayResults(ui->membersview, "SELECT username AS \"Members\" "
+                                    "FROM innodb.GROUP_MEMBERS "
+                                    "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "'");
 
     // update bulletin view to group specific
     updateBulletinsView();
