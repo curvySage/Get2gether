@@ -19,7 +19,7 @@ paintCell::paintCell()
     connection myconn;          //connect to database
     myconn.openConn();
 
-   paintCell();
+  // paintCell();
 }
 
 /* Purpose:         Paints specified date cell with specified color

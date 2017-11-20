@@ -34,20 +34,15 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
         return 3;
     }
 
-    /* If logged in user matches event owner
-     *      Delete event
-     * Else
-     *      Print error
-    */
     if(currentuser == matchuser || TheGroup == matchuser)
     {
-        //QMessageBox::StandardButton choice;
-        QMessageBox::warning(NULL, "Delete Event?", "Are you sure you want to delete your event?", QMessageBox::Yes, QMessageBox::No);
+        QMessageBox::StandardButton choice;
+        choice = QMessageBox::warning(NULL, "Delete Event?", "Are you sure you want to delete your event?", QMessageBox::Yes | QMessageBox::No);
 
         /* If user selects Yes,
         *      Query database removing selected event
         */
-        if (QMessageBox::Yes) {
+        if (choice == QMessageBox::Yes) {
             QSqlQuery query_delete, query_count;
             //QDate currDate = ui->dateEdit->date();
             //int eventCount;
@@ -100,6 +95,10 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
                // updateMemberEvents();
                 return updateMemebers;
            }
+        }
+        if(choice == QMessageBox::No){
+            return 3;
+            qDebug() << "I clicked the NO button";
         }
     }
     else
