@@ -663,8 +663,8 @@ void dashboard::updateBulletinsView()
 
     displayResults(ui->bulletinView, "SELECT userID AS \"User\", message AS \"Message\" "
                                      "FROM innodb.BULLETINS where groupID = '"+currentGroup+"'");
-    //ui->bulletinView->resizeRowsToContents();
-    //DATE_FORMAT(date,'%m/%d/%y') DATEONLY,
+    ui->bulletinView->resizeRowsToContents();
+
     // Messages are kept for a week in the database.
     // Messages are deleted every Monday at 1:00AM
     // All messages are automatically deleted using an event scheduler in the database.
@@ -683,10 +683,10 @@ void dashboard::updateRemindersView()
 
     // return events from the current week.
     displayResults(ui->reminders,
-                   "SELECT ID, groupID, description, date, start, end "
-                   "FROM innodb.EVENTS "
-                   "WHERE yearweek = '"+yearweek+"' AND ID = 0 OR ID "
-                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE username = '"+myuser+"')");
+                   "SELECT innodb.EVENTS.ID, name As \"Group\", description, date, start, end "
+                   "FROM innodb.EVENTS, innodb.GROUPS "
+                   "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.ID = 0 OR innodb.EVENTS.ID "
+                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE innodb.GROUPS.ID = groupID AND username = '"+myuser+"')");
 }
 
 /*=================================================================================================================================*/
