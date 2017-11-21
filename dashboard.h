@@ -69,6 +69,7 @@ private slots:
     void slot_refreshThread();
     void checkNoDateEvent();
     //void on_onlineview_clicked(const QModelIndex &index);
+    void on_DescriptxtEdit_textChanged();
 };
 
 #endif // DASHBOARD_H
