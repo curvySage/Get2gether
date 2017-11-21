@@ -48,7 +48,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
     m_pRefreshThread->start();
 
     /*-- On Load --*/
-    displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
+    displayResults(ui->onlineview, "SELECT username AS \"Username\" FROM innodb.USERS where status = 1");           // populate online "friends"
     paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);          // paint calendar cells with events
     updateEventsView();     // load calendar events for curr. selected date
     updateGroupsView();
@@ -400,10 +400,13 @@ void dashboard::on_deleteEvents_clicked()
     int option = Delete::Do_Delete(ID_Param, matchuser, currentuser, isGroupMode, currDate, TheGroup, GroupID);
     if(option == 1){
         updateEventsView();
+        updateRemindersView();
     }
     else if (option == 2){
         updateMemberEvents();
+        updateRemindersView();
     }
+
     QSqlQuery query_count;
     // count today's events to determine whether today's cell
     // should still be colored or not
@@ -476,7 +479,7 @@ void dashboard::on_createGroup_clicked()
 */
 void dashboard::on_loadonline_clicked()
 {
-    displayResults(ui->onlineview, "SELECT username "
+    displayResults(ui->onlineview, "SELECT username AS \"Username\" "
                                    "FROM innodb.USERS "
                                    "WHERE status = 1");
 }
@@ -683,10 +686,10 @@ void dashboard::updateRemindersView()
 
     // return events from the current week.
     displayResults(ui->reminders,
-                   "SELECT innodb.EVENTS.ID, name As \"Group\", description, date, start, end "
+                   "SELECT date AS \"Date\", description AS \"Details\", name AS \"Group\", start AS \"Start\", end AS \"End\" "
                    "FROM innodb.EVENTS, innodb.GROUPS "
-                   "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.ID = 0 OR innodb.EVENTS.ID "
-                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE innodb.GROUPS.ID = groupID AND username = '"+myuser+"')");
+                   "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.ID "
+                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE (innodb.GROUPS.ID = groupID AND username = '"+myuser+"'))");
 }
 
 /*=================================================================================================================================*/
@@ -774,6 +777,52 @@ void dashboard::on_messageBox_textChanged()
     }
 }
 
+/* Purpose:         slot for when user edits event descriptor
+ *                  limits message length and updates remaining characters.
+ * Postconditions:  descriptor is updated as user types into given text
+ *                  field
+*/
+void dashboard::on_DescriptxtEdit_textChanged()
+{
+    int MAX = 50;
+
+    // validation check if user pastes in input that is over 100.
+    if (ui->DescriptxtEdit->toPlainText().length() > MAX + 1) {
+        QMessageBox MsgBox;
+        MsgBox.setWindowTitle("Error");
+        MsgBox.setText("Your input is over the character limit.");
+        MsgBox.exec();
+
+        ui->DescriptxtEdit->clear();
+    }
+
+    // validation check if users types over 100 characters.
+    if (ui->DescriptxtEdit->toPlainText().length() > MAX) {
+        ui->DescriptxtEdit->textCursor().deletePreviousChar();
+    }
+
+    // if message is 100, change label to red, else back to black.
+    if (ui->DescriptxtEdit->toPlainText().length() == MAX) {
+        ui->DescriptxtEdit->setStyleSheet("color: red;");
+    }
+    else {
+        ui->DescriptxtEdit->setStyleSheet("color: black;");
+    }
+}
+
+/* Purpose:         overrides the exit button for dashboard to add confirmation exit box.
+ * Postconditions:  message box popups up to confirm exit action.
+*/
+void dashboard::closeEvent(QCloseEvent * e) {
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Confirm",
+                                                                tr("Are you sure you want to exit?\n"),
+                                                                QMessageBox::Cancel | QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes) {
+        e->ignore();
+    } else {
+        e->accept();
+    }
+}
 /*=================================================================================================================================*/
 
 /*.------------------------.*/
@@ -826,17 +875,6 @@ void dashboard::resetGroupAttributes()
     // Disconnect group calendar functions
     disconnect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateMemberEvents()));
     disconnect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateMemberEvents()));
-}
-
-void dashboard::closeEvent(QCloseEvent * e) {
-    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Confirm",
-                                                                tr("Are you sure you want to exit?\n"),
-                                                                QMessageBox::Cancel | QMessageBox::Yes);
-    if (resBtn != QMessageBox::Yes) {
-        e->ignore();
-    } else {
-        e->accept();
-    }
 }
 
 /* Purpose: Checks to see if there is an event selected
