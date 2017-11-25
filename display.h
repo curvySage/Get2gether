@@ -11,10 +11,30 @@ class display : public QObject
 {
     Q_OBJECT
 public:
+    connection conn;
+    QTableView *table;
+    QString id;
+    QString selectedDateStr;
+
     display();
+<<<<<<< Updated upstream
 
 public slots:
 
+=======
+    display(connection &myconn);
+
+private:
+    void resetValues();
+
+public slots:
+    void displayResults(QTableView *table, QString command);
+    void updateEventsView();
+    void updateMemberEvents();
+    void updateGroupEvents();
+    void updateMembersView();
+    void initValues(QTableView *tbl, QString newID, QString date);
+>>>>>>> Stashed changes
 };
 
 #endif // DISPLAY_H

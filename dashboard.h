@@ -8,6 +8,7 @@
 #include <QThread>
 #include <QtCore>
 #include <mythread.h>
+#include "display.h"
 
 #include "display.h"
 
@@ -43,6 +44,7 @@ public:
     QString groupID;
     QString groupName;
     MyThread *m_pRefreshThread;
+    display *displayObject;
     connection myconn;
     QString getGroupID();
     bool getMode();
@@ -59,6 +61,9 @@ private:
 protected:
     void closeEvent(QCloseEvent * e);
 
+signals:
+    void cellChanged(QTableView *tbl, QString user, QString date);
+
 private slots:
     void on_loadonline_clicked();
     void on_addevents_clicked();
@@ -74,17 +79,22 @@ private slots:
     void on_calendarWidget_selectionChanged();
     void on_messageBox_textChanged();
     void on_networktabs_currentChanged(int index);
-    void updateEventsView();
+    //void updateEventsView();
     void updateGroupsView();
     void updateBulletinsView();
     void updateRemindersView();
+<<<<<<< Updated upstream
     void updateMemberEvents();
     void updateGroupEvents();
 >>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
+=======
+    //void updateMemberEvents();
+    //void updateGroupEvents();
+>>>>>>> Stashed changes
     void paint(QDate date, QColor color);
     //void paintEvents();
     void clearEditInfo();
-    void displayResults(QTableView * table, QString);
+    //void displayResults(QTableView * table, QString);
     void resetGroupAttributes();
 <<<<<<< HEAD
     void updateBulletinsView();
@@ -104,8 +114,12 @@ private slots:
     void slot_refreshThread();
     void checkNoDateEvent();
     //void on_onlineview_clicked(const QModelIndex &index);
+<<<<<<< Updated upstream
     void on_DescriptxtEdit_textChanged();
 >>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
+=======
+    void on_calendarWidget_clicked(const QDate &date);
+>>>>>>> Stashed changes
 };
 
 #endif // DASHBOARD_H
