@@ -125,10 +125,10 @@ void Dialog::on_buttonBox_accepted()
 {
     this->accept();
 
+    QString mydesc = ui->description->toPlainText();
     date = ui->dateEdit->date().toString();
     QString mystart = ui->start->text();
     QString myend = ui->end->text();
-    QString mydesc = ui->description->toPlainText();
     QSqlQuery query;
     QString newEventID;
 

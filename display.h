@@ -25,9 +25,12 @@ private:
 public slots:
     void displayResults(QTableView *table, QString command);
     void updateEventsView();
+    void updateGroupsView();
     void updateMemberEvents();
-    void updateGroupEvents();
+    void updateGroupEvents();   // doesn't work
     void updateMembersView();
+    void updateRemindersView();
+    void updateBulletinsView();
     void initValues(QTableView *tbl, QString newID, QString date);
 };
 
