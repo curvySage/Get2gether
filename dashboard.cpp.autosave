@@ -610,8 +610,6 @@ void dashboard::slot_refreshThread()
 {
     qDebug("dashboard : slot_refreshThread()");
     on_loadonline_clicked();
-    //displayObject->initValues(ui->bulletinView, getGroupID(), "");
-    //displayObject->updateBulletinsView();
     emit updateBulletins(ui->bulletinView, groupID);
 }
 

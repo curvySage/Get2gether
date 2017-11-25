@@ -56,7 +56,9 @@ protected:
     void closeEvent(QCloseEvent * e);
 
 signals:
-    void cellChanged(QTableView *tbl, QString user, QString date);
+    void updateTable(QTableView *tbl, QString user, QString date);
+    void updateReminder(QTableView *reminderTbl, QString user);
+    void updateBulletins(QTableView *bulletinTbl, QString groupID);
 
 private slots:
     void on_loadonline_clicked();

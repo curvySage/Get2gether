@@ -15,26 +15,26 @@ display::display(connection &myconn)
  *                  by current user
  * Postconditions:  Query results are displayed in eventsview
 */
-void display::updateEventsView()
+void display::updateEventsView(QTableView *eventTable, QString username, QString date)
 {
-    qDebug() << "display : updateEventsView() : " + id + " : " + selectedDateStr;
-    displayResults(table, "SELECT ID AS \"Event ID\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
+    qDebug() << "display : updateEventsView() : " + username + " : " + date;
+    displayResults(eventTable, "SELECT ID AS \"Event ID\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
                                        "FROM innodb.USER_EVENTS, innodb.EVENTS "
-                                       "WHERE eventID = ID AND username ='" +id+
-                                       "' AND date = '" +selectedDateStr+ "'");
+                                       "WHERE eventID = ID AND username ='" +username+
+                                       "' AND date = '" +date+ "'");
 }
 
 /* Purpose:         Displays all of the user's associated groups into
  *                  groupsview
  * Postconditions:  All groups user is a part of is displayed in groupsview
 */
-void display::updateGroupsView()
+void display::updateGroupsView(QTableView *groupTbl, QString username)
 {
     qDebug("display : updateGroupsView()");
-    displayResults(table, "SELECT ID AS \"ID\", name AS \"Name\" "
+    displayResults(groupTbl, "SELECT ID AS \"ID\", name AS \"Name\" "
                                    "FROM innodb.GROUPS, innodb.GROUP_MEMBERS "
                                    "WHERE ID = groupID "
-                                   "AND username = '" +id+ "'");          // populate associated groups
+                                   "AND username = '" +username+ "'");          // populate associated groups
 }
 
 /* Purpose:         Displays all group member's events of a selected
@@ -43,26 +43,26 @@ void display::updateGroupsView()
  *                  groupID must be set (i.e. selected in groupsview)
  * Postconditions:  Updates eventsview with all group member's events
 */
-void display::updateMemberEvents()
+void display::updateMemberEvents(QTableView *eventTable, QString groupID, QString date)
 {
-    qDebug() << "display : updateMemberEvents() : " + id + " : " + selectedDateStr;
-    displayResults(table, "SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
+    qDebug() << "display : updateMemberEvents() : " + groupID + " : " + date;
+    displayResults(eventTable, "SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
                                         "date AS \"Date\", start AS \"Start\", end AS \"End\" "
                                    "FROM innodb.EVENTS, innodb.USER_EVENTS "
                                    "WHERE ID = eventID AND "
-                                    "date = '" +selectedDateStr+
+                                    "date = '" +date+
                                     "' AND innodb.USER_EVENTS.username IN (SELECT innodb.GROUP_MEMBERS.username "
                                                                           "FROM innodb.GROUP_MEMBERS "
-                                                                          "WHERE innodb.GROUP_MEMBERS.groupID = '" +id+ "') "
+                                                                          "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "') "
                                    "ORDER BY groupID");        // Update eventsview with all group member's events
 }
 
-void display::updateMembersView()
+void display::updateMembersView(QTableView *memberTbl, QString groupID)
 {
-    qDebug() << "display : updateMembersView() : group " + id;
-    displayResults(table, "SELECT username AS \"Members\" "
+    qDebug() << "display : updateMembersView() : group " + groupID;
+    displayResults(memberTbl, "SELECT username AS \"Members\" "
                                         "FROM innodb.GROUP_MEMBERS "
-                                        "WHERE innodb.GROUP_MEMBERS.groupID = '" +id+ "'");
+                                        "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "'");
 }
 
 /* Purpose:         Updates eventsview to display all group events in
@@ -72,18 +72,18 @@ void display::updateMembersView()
  * Postconditions:  When group ID is selected in groupsview, all group's events are
  *                  loaded into eventsview
 */
-void display::updateGroupEvents()
+void display::updateGroupEvents(QTableView *eventTbl, QString groupID)
 {
-        displayResults(table, "SELECT ID AS \"Event ID \", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
+        displayResults(eventTbl, "SELECT ID AS \"Event ID \", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
                                    "FROM innodb.EVENTS "
-                                   "WHERE groupID = '" +id+ "'");
+                                   "WHERE groupID = '" +groupID+ "'");
 }
 
 /* Purpose:         returns the events from the current week.
  * Precondtions:    An event has its yearweek column set when inserted in the database. This is done in dialog.cpp
  * Postconditions:  reminders is uploaded with all events upcoming in current week
 */
-void display::updateRemindersView()
+void display::updateRemindersView(QTableView *reminderTbl, QString username)
 {
     qDebug("display : updateRemindersView()");
     // get the current year and week from currentDate.
@@ -92,11 +92,11 @@ void display::updateRemindersView()
     QString yearweek = QString::number(year) + QString::number(week); // ex: 201743
 
     // return events from the current week.
-    displayResults(table,
+    displayResults(reminderTbl,
                    "SELECT name AS \"Group\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end  AS \"End\" "
                    "FROM innodb.EVENTS, innodb.GROUPS "
                    "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.ID "
-                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE (innodb.GROUPS.ID = groupID AND username = '"+id+"'))");
+                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE (innodb.GROUPS.ID = groupID AND username = '"+username+"'))");
 }
 
 /* Purpose:         Displays all bulletin messages in
@@ -104,12 +104,12 @@ void display::updateRemindersView()
  * Postcondtions:   All bulletin messages stored in innodb.BULLETINS
  *                  are selected and displayed in bulletinview
 */
-void display::updateBulletinsView()
+void display::updateBulletinsView(QTableView *bulletinTbl, QString groupID)
 {
     qDebug() << "display : updateBulletinsView()";
-    displayResults(table, "SELECT userID AS \"User\", message AS \"Message\" "
-                                     "FROM innodb.BULLETINS where groupID = '"+id+"'");
-    table->resizeRowsToContents();
+    displayResults(bulletinTbl, "SELECT userID AS \"User\", message AS \"Message\" "
+                                     "FROM innodb.BULLETINS where groupID = '"+groupID+"'");
+    bulletinTbl->resizeRowsToContents();
 
     // Messages are kept for a week in the database.
     // Messages are deleted every Monday at 1:00AM
