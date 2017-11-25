@@ -15,7 +15,7 @@ class Delete
 {
 public:
     Delete();
-    static int Do_Delete(QString ID_Param, QString matchuser, QString currentuser, bool isGroupMode, QDate currDate, QString TheGroup, QString GroupID);
+    static int Do_Delete(QString ID_Param, QString matchuser, QString currentuser, bool isGroupMode, QString TheGroup, QString GroupID);
 
 };
 

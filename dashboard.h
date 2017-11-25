@@ -32,14 +32,8 @@ class dashboard : public QDialog
     Q_OBJECT
 
 public:
-<<<<<<< HEAD
-    MyThread *m_pRefreshThread;
-    display *displayObject;
-    connection myconn;
-=======
     explicit dashboard(QString u, QWidget *parent = 0);
     ~dashboard();
->>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
     QString myuser;
     QString groupID;
     QString groupName;
@@ -69,8 +63,6 @@ private slots:
     void on_addevents_clicked();
     void on_editEvents_clicked();
     void on_deleteEvents_clicked();
-<<<<<<< HEAD
-=======
     void on_createGroup_clicked();
     void on_sendButton_clicked();
     void on_homeButton_clicked();
@@ -83,43 +75,17 @@ private slots:
     void updateGroupsView();
     void updateBulletinsView();
     void updateRemindersView();
-<<<<<<< Updated upstream
-    void updateMemberEvents();
-    void updateGroupEvents();
->>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
-=======
-    //void updateMemberEvents();
-    //void updateGroupEvents();
->>>>>>> Stashed changes
-    void paint(QDate date, QColor color);
-    //void paintEvents();
     void clearEditInfo();
-    //void displayResults(QTableView * table, QString);
     void resetGroupAttributes();
-<<<<<<< HEAD
-    void updateBulletinsView();
-    //void on_onlineview_clicked(const QModelIndex &index);
-    void updateGroupsView();
-    void updateRemindersView();
-    void displayResults(QTableView *table, QString command);
-    void updateEventsView();
-    void updateMemberEvents();
-    void updateGroupEvents();
 
     // new methods created for simplification
     int countEvents(QDate target, QString username);
     bool isGroupEvent(int eventID, int &groupID);
     void printError(ErrorCode error_code);
-=======
     void slot_refreshThread();
     void checkNoDateEvent();
-    //void on_onlineview_clicked(const QModelIndex &index);
-<<<<<<< Updated upstream
     void on_DescriptxtEdit_textChanged();
->>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
-=======
     void on_calendarWidget_clicked(const QDate &date);
->>>>>>> Stashed changes
 };
 
 #endif // DASHBOARD_H

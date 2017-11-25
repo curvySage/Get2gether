@@ -17,11 +17,6 @@ public:
     QString selectedDateStr;
 
     display();
-<<<<<<< Updated upstream
-
-public slots:
-
-=======
     display(connection &myconn);
 
 private:
@@ -34,7 +29,6 @@ public slots:
     void updateGroupEvents();
     void updateMembersView();
     void initValues(QTableView *tbl, QString newID, QString date);
->>>>>>> Stashed changes
 };
 
 #endif // DISPLAY_H

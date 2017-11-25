@@ -1,26 +1,11 @@
-<<<<<<< Updated upstream
 #include <QDate>
-#include <QSqlQuery>
-#include <QSqlQueryModel>
-
-#include "connection.h"
-=======
 #include <QSqlQuery>
 #include <QSqlQueryModel>
 #include <QSqlError>
 #include <QDebug>
-
->>>>>>> Stashed changes
+#include "connection.h"
 #include "display.h"
-#include <mythread.h>
 
-display::display()
-{
-}
-
-<<<<<<< Updated upstream
-
-=======
 display::display(connection &myconn)
 {
     conn = myconn;
@@ -123,4 +108,3 @@ void display::resetValues()
     table = NULL;
     id = selectedDateStr = "";
 }
->>>>>>> Stashed changes

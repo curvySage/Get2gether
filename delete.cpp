@@ -7,7 +7,7 @@ Delete::Delete(){
 /* Purpose:         Allows event deletion
  * Postcondition:   Selected event is deleted from database and removed from calendar
 */
-int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, bool isGroupMode, QDate currDate, QString TheGroup, QString GroupID)
+int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, bool isGroupMode, QString TheGroup, QString GroupID)
 {
     int updateEvents = 1;
     int updateMemebers = 2;

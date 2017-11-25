@@ -13,18 +13,7 @@
 MyThread::MyThread(QObject * pObj) {
     m_pReciever = pObj;
     m_exit = false;
-
-<<<<<<< HEAD
-    // We can use the same thread for updating multiple views by creating a slot
-    // in dashboard that calls the update view functions.
-
-    // This one just updates the bulletin view.
-    qDebug() << "Before connector";
-    connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(updateBulletinsView()));
-    qDebug() << "After connector";
-=======
     connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(slot_refreshThread()));
->>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
 }
 
 /*=================================================================================================================================*/
