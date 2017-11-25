@@ -42,6 +42,7 @@ private slots:
     void on_buttonBox_accepted();
     void on_buttonBox_rejected();
     void closeEvent(QCloseEvent *event);
+    void on_description_textChanged();
 };
 
 #endif // DIALOG_H

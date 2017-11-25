@@ -76,6 +76,7 @@ void MainWindow::on_login_button_clicked()
         this->hide();
 
         dashboard dash(myuser);
+        dash.setWindowFlags(Qt::Window);
         dash.setModal(true);
         dash.exec();
     }

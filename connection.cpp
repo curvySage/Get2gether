@@ -26,6 +26,7 @@ void connection::openConn() {
     db.setPort(3306);
     db.setUserName("root");
     db.setPassword("get2gether");
+
     db.open();
 }
 

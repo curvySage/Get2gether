@@ -31,18 +31,23 @@ class dashboard : public QDialog
     Q_OBJECT
 
 public:
+<<<<<<< HEAD
     MyThread *m_pRefreshThread;
     display *displayObject;
     connection myconn;
-    QString myuser;
-    bool isGroupMode;               // to indicate group/personal mode
-    QString groupID;
-    QString groupName;
+=======
     explicit dashboard(QString u, QWidget *parent = 0);
     ~dashboard();
-    bool getMode();
-    bool resetStatus;
+>>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
+    QString myuser;
+    QString groupID;
+    QString groupName;
+    MyThread *m_pRefreshThread;
+    connection myconn;
     QString getGroupID();
+    bool getMode();
+    bool isGroupMode;               // to indicate group/personal mode
+    bool resetStatus;
     void setMode(bool isGroup);
     void setGroupID(const QModelIndex &groupID);
     void setGroupName();
@@ -51,23 +56,37 @@ public:
 private:
     Ui::dashboard *ui;
 
+protected:
+    void closeEvent(QCloseEvent * e);
+
 private slots:
     void on_loadonline_clicked();
     void on_addevents_clicked();
-    void on_eventsview_clicked(const QModelIndex &index);
     void on_editEvents_clicked();
     void on_deleteEvents_clicked();
-    void paint(QDate date, QColor color);
-    void paintEvents();
-    void clearEditInfo();
-    void on_calendarWidget_selectionChanged();
-    void on_groupsview_clicked(const QModelIndex &index);
+<<<<<<< HEAD
+=======
     void on_createGroup_clicked();
     void on_sendButton_clicked();
+    void on_homeButton_clicked();
+    void on_groupsview_clicked(const QModelIndex &index);
+    void on_eventsview_clicked(const QModelIndex &index);
+    void on_calendarWidget_selectionChanged();
     void on_messageBox_textChanged();
     void on_networktabs_currentChanged(int index);
-    void on_homeButton_clicked();
+    void updateEventsView();
+    void updateGroupsView();
+    void updateBulletinsView();
+    void updateRemindersView();
+    void updateMemberEvents();
+    void updateGroupEvents();
+>>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
+    void paint(QDate date, QColor color);
+    //void paintEvents();
+    void clearEditInfo();
+    void displayResults(QTableView * table, QString);
     void resetGroupAttributes();
+<<<<<<< HEAD
     void updateBulletinsView();
     //void on_onlineview_clicked(const QModelIndex &index);
     void updateGroupsView();
@@ -81,6 +100,12 @@ private slots:
     int countEvents(QDate target, QString username);
     bool isGroupEvent(int eventID, int &groupID);
     void printError(ErrorCode error_code);
+=======
+    void slot_refreshThread();
+    void checkNoDateEvent();
+    //void on_onlineview_clicked(const QModelIndex &index);
+    void on_DescriptxtEdit_textChanged();
+>>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
 };
 
 #endif // DASHBOARD_H

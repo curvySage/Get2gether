@@ -14,6 +14,7 @@ MyThread::MyThread(QObject * pObj) {
     m_pReciever = pObj;
     m_exit = false;
 
+<<<<<<< HEAD
     // We can use the same thread for updating multiple views by creating a slot
     // in dashboard that calls the update view functions.
 
@@ -21,6 +22,9 @@ MyThread::MyThread(QObject * pObj) {
     qDebug() << "Before connector";
     connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(updateBulletinsView()));
     qDebug() << "After connector";
+=======
+    connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(slot_refreshThread()));
+>>>>>>> d9c9ef1feba9fecc7c8c911c22d6127761b59123
 }
 
 /*=================================================================================================================================*/
@@ -43,7 +47,7 @@ void MyThread::performExit() {
 // PURPOSE: overrides the run function.
 void MyThread::run() {
     while (!m_exit) {
-        sleep(5);       // in seconds. msleep() for msecs.
+        sleep(10);       // in seconds. msleep() for msecs.
         emit mysignal();
     }
 }
