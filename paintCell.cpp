@@ -14,13 +14,25 @@
 #include "ui_dashboard.h"
 #include <QIcon>
 
+/*=================================================================================================================================*/
+//                                          class PaintCell-Specific Methods
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Constructor       |*/
+/*'------------------------'*/
+//default constructor
 paintCell::paintCell()
 {
     connection myconn;          //connect to database
     myconn.openConn();
-
-  // paintCell();
 }
+
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Paint Methods     |*/
+/*'------------------------'*/
 
 /* Purpose:         Paints specified date cell with specified color
  * Preconditions:   minimumDate < date < maximumDate
@@ -37,7 +49,10 @@ void paintCell::paint(Ui::dashboard *ui,QDate date, QColor color)
     ui->calendarWidget->setDateTextFormat(date, charFormat);
 }
 
-
+/* Purpose:         Paints all date cells of calendar widget
+ * Postconditions:  All calendar cells with events are painted
+ *                  it's relevant color
+*/
 void paintCell::paintEvents(Ui::dashboard *ui,QDate date,bool isGroupMode,bool resetStatus,QString myuser,QString groupID,connection &newconn)
 {
     QSqlQuery *query = new QSqlQuery(newconn.db);    // used to query DB

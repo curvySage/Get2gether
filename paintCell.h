@@ -15,14 +15,18 @@
 #include <QIcon>
 #include "ui_dashboard.h"
 
+/* Class purpose:   Contains methods relevant the
+ *                  painting of a calendar widget
+ *                  located on the dashboard object
+ * Assumptions:     Cyan = group event
+ *                  Green = personal event
+ *                  White = default color/no event
+*/
 class paintCell
 {
 public:
     paintCell();
     static void paintEvents(Ui::dashboard *ui,QDate date,bool isGroupMode,bool resetStatus,QString myuser,QString groupID,connection &newconn);
     static void paint(Ui::dashboard *ui,QDate date, QColor color);
-/*private slots:
-    void paint(Ui::dashboard *ui,QDate date, QColor color);
-*/
 };
 #endif // PAINTCELL_H

@@ -10,6 +10,9 @@ namespace Ui {
 class GroupPopUp;
 }
 
+/* Class purpose:   Creates the dialog box/form used
+ *                  by a user to create a group
+*/
 class GroupPopUp : public QDialog
 {
     Q_OBJECT
