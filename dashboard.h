@@ -8,6 +8,18 @@
 #include <QThread>
 #include <QtCore>
 #include <mythread.h>
+#include "display.h"
+
+#include "display.h"
+
+//error codes
+typedef enum {
+    EDIT_ERROR_UNAUTH_USER = -1,
+    DELETE_ERROR_UNAUTH_USER = -2,
+    ADD_ERROR_NO_GROUP_SELECTED = -3,
+    EDIT_ERROR_INVALID_MODE = -4,
+    DELETE_ERROR_INVALID_MODE = -5
+}ErrorCode;
 
 namespace Ui {
 class dashboard;
@@ -26,6 +38,7 @@ public:
     QString groupID;
     QString groupName;
     MyThread *m_pRefreshThread;
+    display *displayObject;
     connection myconn;
     QString getGroupID();
     bool getMode();
@@ -42,6 +55,11 @@ private:
 protected:
     void closeEvent(QCloseEvent * e);
 
+signals:
+    void updateTable(QTableView *tbl, QString user, QString date);
+    void updateReminder(QTableView *reminderTbl, QString user);
+    void updateBulletins(QTableView *bulletinTbl, QString groupID);
+
 private slots:
     void on_loadonline_clicked();
     void on_addevents_clicked();
@@ -55,21 +73,17 @@ private slots:
     void on_calendarWidget_selectionChanged();
     void on_messageBox_textChanged();
     void on_networktabs_currentChanged(int index);
-    void updateEventsView();
-    void updateGroupsView();
-    void updateBulletinsView();
-    void updateRemindersView();
-    void updateMemberEvents();
-    void updateGroupEvents();
-    void paint(QDate date, QColor color);
-    //void paintEvents();
     void clearEditInfo();
-    void displayResults(QTableView * table, QString);
     void resetGroupAttributes();
+
+    // new methods created for simplification
+    int countEvents(QDate target, QString username);
+    bool isGroupEvent(int eventID, int &groupID);
+    void printError(ErrorCode error_code);
     void slot_refreshThread();
     void checkNoDateEvent();
-    //void on_onlineview_clicked(const QModelIndex &index);
     void on_DescriptxtEdit_textChanged();
+    void on_calendarWidget_clicked(const QDate &date);
 };
 
 #endif // DASHBOARD_H

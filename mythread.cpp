@@ -1,3 +1,4 @@
+#include "display.h"
 #include "mythread.h"
 
 /*=================================================================================================================================*/
@@ -12,7 +13,6 @@
 MyThread::MyThread(QObject * pObj) {
     m_pReciever = pObj;
     m_exit = false;
-
     connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(slot_refreshThread()));
 }
 

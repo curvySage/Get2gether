@@ -35,8 +35,10 @@ SOURCES += \
     dialog.cpp \
     grouppopup.cpp \
     mythread.cpp \
+    edit.cpp \
+    display.cpp \
     delete.cpp \
-    paintCell.cpp
+    paintCell.cpp \
 
 HEADERS += \
         mainwindow.h \
@@ -45,8 +47,10 @@ HEADERS += \
     dialog.h \
     grouppopup.h \
     mythread.h \
+    edit.h \
+    display.h \
     delete.h \
-    paintCell.h
+    paintCell.h \
 
 FORMS += \
         mainwindow.ui \
@@ -59,7 +63,9 @@ RC_ICONS = get2gether_icon.ico
 RESOURCES += \
     assets.qrc
 
-win32: LIBS += -L$$PWD/connector/windows/lib/opt/ -lmysqlcppconn
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/connector/mac/lib/release/ -lmysqlclient.18
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/connector/mac/lib/debug/ -lmysqlclient.18
+else:unix: LIBS += -L$$PWD/connector/mac/lib/ -lmysqlclient.18
 
-INCLUDEPATH += $$PWD/connector/windows/lib/opt
-DEPENDPATH += $$PWD/connector/windows/lib/opt
+INCLUDEPATH += $$PWD/connector/mac/include
+DEPENDPATH += $$PWD/connector/mac/include

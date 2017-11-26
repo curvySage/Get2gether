@@ -6,6 +6,7 @@
 #include <QSqlQueryModel>
 #include <QTableWidget>
 #include <QtGui/QTextCharFormat>
+#include <QSignalMapper>
 
 #include "dialog.h"
 #include "grouppopup.h"
@@ -36,6 +37,7 @@ dashboard::dashboard(QString u, QWidget *parent) :
     isGroupMode = false;
     groupID = "0";
     resetStatus = false;
+    displayObject = new display(myconn);
 
     /*-- Initialize dashboard --*/
     ui->setupUi(this);
@@ -48,17 +50,18 @@ dashboard::dashboard(QString u, QWidget *parent) :
     m_pRefreshThread->start();
 
     /*-- On Load --*/
-    displayResults(ui->onlineview, "SELECT username AS \"Username\" FROM innodb.USERS where status = 1");           // populate online "friends"
+    displayObject->displayResults(ui->onlineview, "SELECT username FROM innodb.USERS where status = 1");           // populate online "friends"
     paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);          // paint calendar cells with events
-    updateEventsView();     // load calendar events for curr. selected date
-    updateGroupsView();
-    updateBulletinsView();  // populates bulletins view
-    updateRemindersView();  // populates reminders view
+    displayObject->updateEventsView(ui->eventsview, myuser, ui->calendarWidget->selectedDate().toString());
+    displayObject->updateGroupsView(ui->groupsview, myuser);
+    displayObject->updateBulletinsView(ui->bulletinView, groupID);
+    displayObject->updateRemindersView(ui->reminders, myuser);
     ui->bulletinView->scrollToBottom();
 
     /*-- Signals & Slots --*/
-    QObject::connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
-    QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateEventsView()));           // update eventsview for selected date
+    connect(ui->calendarWidget, SIGNAL(activated(QDate)), this, SLOT(on_addevents_clicked()));     // prompt add event for selected date when dbl-clicked
+    connect(this, SIGNAL(updateReminder(QTableView*,QString)), displayObject, SLOT(updateRemindersView(QTableView*,QString)));
+    connect(this, SIGNAL(updateBulletins(QTableView*,QString)), displayObject, SLOT(updateBulletinsView(QTableView*,QString)));
 }
 
 /*=================================================================================================================================*/
@@ -191,12 +194,12 @@ void dashboard::on_homeButton_clicked()
     }
 
     //Refresh Online Table
-    displayResults(ui->onlineview, "SELECT username "
+    displayObject->displayResults(ui->onlineview, "SELECT username "
                                    "FROM innodb.USERS "
                                    "WHERE status = 1");
     //Update Userlabel to the username
     updateCalendarName(myuser);
-    updateEventsView();
+    displayObject->updateEventsView(ui->eventsview, myuser, ui->calendarWidget->selectedDate().toString());
     paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);                          // Paint personal and group events appropriately
 }
 
@@ -212,12 +215,7 @@ void dashboard::on_addevents_clicked()
     */
     if(this->groupID == "0" && isGroupMode)
     {
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Error: Select a group you want to add a group event.");
-        MsgBox.exec();
-
-        qDebug("Insertion failed : select group to add group event.");
+        printError(ADD_ERROR_NO_GROUP_SELECTED);
 
         return;
     }
@@ -237,7 +235,8 @@ void dashboard::on_addevents_clicked()
     */
     if(h.accepted)
     {
-        updateRemindersView();
+        emit updateReminder(ui->reminders, myuser);
+
         /* If dashboard is in group mode
          *      Paint group event
          *      Update eventsview with groupevents
@@ -247,11 +246,11 @@ void dashboard::on_addevents_clicked()
         */
         if(isGroupMode)
         {
-            updateMemberEvents();
+            displayObject->updateMemberEvents(ui->eventsview, groupID, h.getDate().toString());
         }
         else
         {
-            updateEventsView();
+            displayObject->updateEventsView(ui->eventsview, myuser, h.getDate().toString());
         }
 
         paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
@@ -285,12 +284,7 @@ void dashboard::on_editEvents_clicked()
     */
     if(isGroupEvent && !isGroupMode)
     {
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Sorry, but you can't edit group event from personal calendar!");
-        MsgBox.exec();
-
-        qDebug("Modification failed : group event must be edited from group calendar.");
+        printError(DELETE_ERROR_INVALID_MODE);
 
         return;
     }
@@ -315,8 +309,7 @@ void dashboard::on_editEvents_clicked()
             QString Editstart = ui->startTime->text();
             QString Editend = ui->endTime->text();
             QString Editdesc = ui->DescriptxtEdit->toPlainText();
-            QSqlQuery query_update, query_count;
-            int eventCount;
+            QSqlQuery query_update;
 
             // Update event details
             query_update.exec("UPDATE innodb.EVENTS "
@@ -326,15 +319,7 @@ void dashboard::on_editEvents_clicked()
                               "',description='"+Editdesc+
                               "' WHERE ID='"+ID_Param+"'");
 
-            // To count today's events to determine if today's cell should
-            // still be colored or not
-            query_count.exec("SELECT COUNT(*) "
-                             "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                             "WHERE date = '" +originalDate.toString()+
-                             "' AND ID = eventiD "
-                             "AND username ='" +myuser+ "'");
-            query_count.first();
-            eventCount = query_count.value(0).toInt();  // saves return value
+            emit updateReminder(ui->reminders, myuser);
 
             QDate modifyDate = ui->dateEdit->date();    // Store date modified in editEvent container
 
@@ -347,34 +332,31 @@ void dashboard::on_editEvents_clicked()
                  *      paint originalDate white
                  * paint modifyDate green
                  */
-                if(eventCount == 0)
-                    paint(originalDate, Qt::white);
-
-                if(isGroupEvent)
-                {
-                    //paint(modifyDate, Qt::cyan);
-                    updateMemberEvents();
-                }
-                else
-                {
-                    //paint(modifyDate, Qt::green);
-
-                    if(isGroupMode) updateMemberEvents();
-                    else updateEventsView();
-                }
-
-                paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
-                clearEditInfo();
+                if(countEvents(originalDate, myuser) == 0)
+                     paintCell::paint(ui, originalDate, Qt::white);
             }
+
+            if(isGroupEvent || isGroupMode)
+            {
+                displayObject->updateMemberEvents(ui->eventsview, groupID, ui->calendarWidget->selectedDate().toString());
+            }
+            else
+            {
+                displayObject->updateEventsView(ui->eventsview, myuser, ui->calendarWidget->selectedDate().toString());
+            }
+
+            paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
+            clearEditInfo();
+        }
+        else
+        {
+            qDebug().noquote() << "Modification of Event " +ID_Param+ " canceled.";
         }
     }
     else
     {
        // Users cannot edit events that aren't theres
-       QMessageBox MsgBox;
-       MsgBox.setWindowTitle("Woah There!");
-       MsgBox.setText("Sorry, but you can't change other's schedules!");
-       MsgBox.exec();
+       printError(EDIT_ERROR_UNAUTH_USER);
     }
 
 }
@@ -390,41 +372,31 @@ void dashboard::on_deleteEvents_clicked()
     }
 
     QString ID_Param = ui->ID_Label->text();
-    QString matchuser = ui->NameDisplay->text();                // Get event owner or owner's name
+    QString matchuser = ui->NameDisplay->text();                // Get event owner
     QString currentuser = myuser; // Grabbing the user's log in name.
     QString TheGroup = groupName;
     QDate currDate = ui->dateEdit->date();
     QString GroupID = groupID;
 
+    int option = Delete::Do_Delete(ID_Param, matchuser, currentuser, isGroupMode, TheGroup, GroupID);
 
-    int option = Delete::Do_Delete(ID_Param, matchuser, currentuser, isGroupMode, currDate, TheGroup, GroupID);
     if(option == 1){
-        updateEventsView();
-        updateRemindersView();
+        displayObject->updateEventsView(ui->eventsview, myuser, currDate.toString());
+        emit updateReminder(ui->reminders, myuser);
     }
     else if (option == 2){
-        updateMemberEvents();
-        updateRemindersView();
+        displayObject->updateMemberEvents(ui->eventsview, groupID, currDate.toString());
+        emit updateReminder(ui->reminders, myuser);
     }
-
-    QSqlQuery query_count;
-    // count today's events to determine whether today's cell
-    // should still be colored or not
-    query_count.exec("SELECT COUNT(*) "
-                     "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                     "WHERE date = '" +currDate.toString()+
-                     "' AND ID = eventiD AND username ='" +currentuser+ "'");
-    query_count.first();
-    int eventCount = query_count.value(0).toInt();
 
     /* If today has no more events
      *    Paint today's cell white
     */
-    if(eventCount == 0)
-        paint(currDate, Qt::white);     // paint back to default color
+
+    if(countEvents(currDate, myuser) == 0)
+        paintCell::paint(ui, currDate, Qt::white);     // paint back to default color
 
     clearEditInfo();                // clear edit info
-
 }
 
 /* Purpose:         slot for when user sends a message
@@ -470,7 +442,7 @@ void dashboard::on_createGroup_clicked()
 
     if(createGroup.accepted)
     {
-        updateGroupsView();
+        displayObject->updateGroupsView(ui->groupsview, myuser);
     }
 }
 
@@ -479,12 +451,11 @@ void dashboard::on_createGroup_clicked()
 */
 void dashboard::on_loadonline_clicked()
 {
-    displayResults(ui->onlineview, "SELECT username AS \"Username\" "
+    displayObject->displayResults(ui->onlineview, "SELECT username "
                                    "FROM innodb.USERS "
                                    "WHERE status = 1");
 }
 
-/*
 /* Purpose:         Initializes event information form when user clicks
  *                  an event in eventsview
  * Postconditions:  Event info filled is determined by event values
@@ -492,7 +463,6 @@ void dashboard::on_loadonline_clicked()
 */
 void dashboard::on_eventsview_clicked(const QModelIndex &index)
 {
-
     int rowidx = index.row();
 
     QString val=ui->eventsview->model()->index(rowidx , 0).data().toString();            // Grab value user clicked in eventsview
@@ -505,8 +475,7 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
     /* If query executes,
      *      Initialize info text fields with relevant data
     */
-    if(selectQry.exec()){
-        while(selectQry.next()){
+    if(selectQry.exec() && selectQry.first()){
             isGroupEvent = (selectQry.value(6).toInt() != 0);
             if(isGroupEvent)
             {
@@ -529,10 +498,9 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
 
             ui->DescriptxtEdit->setText(selectQry.value(3).toString());
             ui->dateEdit->setDate(QDate::fromString(selectQry.value(2).toString(), "ddd MMM d yyyy"));
-            ui->startTime->setTime(QTime::fromString(selectQry.value(4).toString(), "hh:mm AP"));
-            ui->endTime->setTime(QTime::fromString(selectQry.value(5).toString(), "hh:mm AP"));
+            ui->startTime->setTime(QTime::fromString(selectQry.value(4).toString(), "h:mm AP"));
+            ui->endTime->setTime(QTime::fromString(selectQry.value(5).toString(), "h:mm AP"));
             ui->ID_Label->setText(selectQry.value(1).toString());
-        }
     }
     //To
     else {
@@ -546,20 +514,22 @@ void dashboard::on_eventsview_clicked(const QModelIndex &index)
 */
 void dashboard::on_groupsview_clicked(const QModelIndex &index)
 {
+    // reset paint
+    resetStatus = true;
+    resetStatus = false;
+
     int rowidx = index.row();
+
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,true,myuser,groupID,myconn);          // resets calendar cell color to default
 
     groupID = ui->groupsview->model()->index(rowidx , 0).data().toString();
     groupName = ui->groupsview->model()->index(rowidx , 1).data().toString();
     updateCalendarName("# " + groupName);
 
     paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);          // paint calendar cells with events
-    updateGroupEvents();    // show all group's events in eventsview
-    displayResults(ui->membersview, "SELECT username AS \"Members\" "
-                                    "FROM innodb.GROUP_MEMBERS "
-                                    "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "'");
-
-    // update bulletin view to group specific
-    updateBulletinsView();
+    displayObject->updateGroupEvents(ui->eventsview, groupID);
+    displayObject->updateMembersView(ui->membersview, groupID);
+    emit updateBulletins(ui->bulletinView, groupID);
 }
 
 
@@ -570,126 +540,7 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
 void dashboard::slot_refreshThread()
 {
     on_loadonline_clicked();
-    updateBulletinsView();
-}
-
-/*=================================================================================================================================*/
-
-/*.------------------------.*/
-/*|      Table Views       |*/
-/*'------------------------'*/
-
-/* Purpose:         Displays results of specified query in specified table view
- * Preconditions:   command is a valid SQL query
- *                  command is a relevant query for database: innodb
- * Postconditions:  Query results are inserted into table
-*/
-void dashboard::displayResults(QTableView * table, QString command)
-{
-    //QSqlQueryModel used to execute sql and traverse the results on a view table.
-    QSqlQueryModel * modal = new QSqlQueryModel();
-    QSqlQuery * query = new QSqlQuery(myconn.db);
-
-    query->exec(command);
-    modal->setQuery(*query);
-    table->setModel(modal);
-}
-
-/* Purpose:         Updates eventsview to display current date's events owned
- *                  by current user
- * Postconditions:  Query results are displayed in eventsview
-*/
-// PURPOSE: Updates eventsview based on the selected event day
-void dashboard::updateEventsView()
-{
-    displayResults(ui->eventsview, "SELECT ID AS \"Event ID\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
-                                   "FROM innodb.USER_EVENTS, innodb.EVENTS "
-                                   "WHERE eventID = ID AND username ='" +myuser+
-                                   "' AND date = '" +ui->calendarWidget->selectedDate().toString()+ "'");
-}
-
-
-/* Purpose:         Displays all group member's events of a selected
- *                  calendar day in eventsview
- * Preconditions:   Should be called only when dashboard is in group mode
- *                  groupID must be set (i.e. selected in groupsview)
- * Postconditions:  Updates eventsview with all group member's events
-*/
-void dashboard::updateMemberEvents()
-{
-    displayResults(ui->eventsview, "SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
-                                        "date AS \"Date\", start AS \"Start\", end AS \"End\" "
-                                   "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                                   "WHERE ID = eventID AND "
-                                    "date = '" +ui->calendarWidget->selectedDate().toString()+
-                                    "' AND innodb.USER_EVENTS.username IN (SELECT innodb.GROUP_MEMBERS.username "
-                                                                          "FROM innodb.GROUP_MEMBERS "
-                                                                          "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "') "
-                                   "ORDER BY groupID");        // Update eventsview with all group member's events
-}
-
-/* Purpose:         Updates eventsview to display all group events in
- *                  eventsviews (when you click the groupID)
- * Preconditions:   groupID must be set in order to display all group events in
- *                  eventsview
- * Postconditions:  When group ID is selected in groupsview, all group's events are
- *                  loaded into eventsview
-*/
-void dashboard::updateGroupEvents()
-{
-    displayResults(ui->eventsview, "SELECT ID AS \"Event ID \", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
-                                   "FROM innodb.EVENTS "
-                                   "WHERE groupID = '" +groupID+ "'");
-}
-
-
-/* Purpose:         Displays all of the user's associated groups into
- *                  groupsview
- * Postconditions:  All groups user is a part of is displayed in groupsview
-*/
-void dashboard::updateGroupsView()
-{
-    displayResults(ui->groupsview, "SELECT ID AS \"ID\", name AS \"Name\" "
-                                   "FROM innodb.GROUPS, innodb.GROUP_MEMBERS "
-                                   "WHERE ID = groupID "
-                                   "AND username = '" +myuser+ "'");          // populate associated groups
-}
-
-/* Purpose:         Displays all bulletin messages in
- *                  bulletin tab
- * Postcondtions:   All bulletin messages stored in innodb.BULLETINS
- *                  are selected and displayed in bulletinview
-*/
-void dashboard::updateBulletinsView()
-{
-    QString currentGroup = getGroupID();
-
-    displayResults(ui->bulletinView, "SELECT userID AS \"User\", message AS \"Message\" "
-                                     "FROM innodb.BULLETINS where groupID = '"+currentGroup+"'");
-    ui->bulletinView->resizeRowsToContents();
-
-    // Messages are kept for a week in the database.
-    // Messages are deleted every Monday at 1:00AM
-    // All messages are automatically deleted using an event scheduler in the database.
-}
-
-/* Purpose:         returns the events from the current week.
- * Precondtions:    An event has its yearweek column set when inserted in the database. This is done in dialog.cpp
- * Postconditions:  reminders is uploaded with all events upcoming in current week
-*/
-void dashboard::updateRemindersView()
-{
-    // get the current year and week from currentDate.
-    int week = QDate::currentDate().weekNumber();  //ex: 43
-    int year = QDate::currentDate().year();        //ex: 2017
-    QString yearweek = QString::number(year) + QString::number(week); // ex: 201743
-
-    // return events from the current week.
-    displayResults(ui->reminders,
-                   "SELECT date AS \"Date\", description AS \"Details\", name AS \"Group\", start AS \"Start\", end AS \"End\" "
-                   "FROM innodb.EVENTS, innodb.GROUPS "
-                   "WHERE yearweek = '"+yearweek+"' AND innodb.EVENTS.ID "
-                   "IN (SELECT eventID FROM innodb.USER_EVENTS WHERE (innodb.GROUPS.ID = groupID AND username = '"+myuser+"'))");
+    emit updateBulletins(ui->bulletinView, groupID);
 }
 
 /*=================================================================================================================================*/
@@ -722,20 +573,16 @@ void dashboard::on_networktabs_currentChanged(int index)
     {
         resetGroupAttributes();
         setMode(false);
-        updateEventsView();
+        displayObject->updateEventsView(ui->eventsview, myuser, ui->calendarWidget->selectedDate().toString());
         paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
-        updateCalendarName(myuser); //
+        updateCalendarName(myuser);
+        // must include when clicking away from tableview as well
+        ui->groupsview->clearSelection();
+        ui->groupsview->clearFocus();
     }
     else
     {
         setMode(true);
-
-        /*-- Group Signals & Slots --*/
-        // Activated when groups tab is selected
-        // Loads group and personal events into calendar
-        QObject::connect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateMemberEvents()));           // update eventsview for selected date using mouse
-        QObject::connect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateMemberEvents()));       // update eventsview for selected date using keyboard
-
     }
 }
 
@@ -838,25 +685,18 @@ void dashboard::closeEvent(QCloseEvent * e) {
 void dashboard::on_calendarWidget_selectionChanged()
 {
     clearEditInfo();
-    updateEventsView();
+
+    if(isGroupMode)
+    {
+        emit updateTable(ui->eventsview, groupID, ui->calendarWidget->selectedDate().toString());
+    }
+    else
+    {
+        resetGroupAttributes();
+        emit updateTable(ui->eventsview, myuser, ui->calendarWidget->selectedDate().toString());
+    }
+
 }
-
-/* Purpose:         Paints specified date cell with specified color
- * Preconditions:   minimumDate < date < maximumDate
- *                  color is defined in Qt
- * Postconditions:  Indicated date cell's background color is changed to specified color
-*/
-void dashboard::paint(QDate date, QColor color)
-{
-    QBrush brush;
-    QTextCharFormat charFormat;
-    brush.setColor(color);
-    charFormat = ui->calendarWidget->dateTextFormat(date);
-    charFormat.setBackground(brush);
-    ui->calendarWidget->setDateTextFormat(date, charFormat);
-}
-
-
 
 /* Purpose:             Disconnects group calendar connections
  * Preconditions:       Should be called when dashboard is in
@@ -872,12 +712,95 @@ void dashboard::resetGroupAttributes()
     resetStatus = false;
     groupID = "0";     // Reset groupID
     groupName = "";
-    // Disconnect group calendar functions
-    disconnect(ui->calendarWidget, SIGNAL(clicked(QDate)), this, SLOT(updateMemberEvents()));
-    disconnect(ui->calendarWidget, SIGNAL(selectionChanged()), this, SLOT(updateMemberEvents()));
 }
 
-/* Purpose: Checks to see if there is an event selected
+/*
+ * Methods created to separate methods
+*/
+
+// Purpose: returns the value of the amount of events on target
+//          owned by username
+int dashboard::countEvents(QDate target, QString username)
+{
+    QSqlQuery queryCount_query;
+
+    queryCount_query.exec("SELECT COUNT(*) "
+                       "FROM innodb.EVENTS, innodb.USER_EVENTS "
+                       "WHERE date = '" +target.toString()+
+                       "' AND ID = eventID "
+                       "AND username = '" +username+ "'");
+
+    queryCount_query.next();
+
+    return queryCount_query.value(0).toInt();
+}
+
+bool dashboard::isGroupEvent(int eventID, int &groupID)
+{
+    QSqlQuery groupID_query;
+
+    groupID_query.exec("SELECT groupID "
+                       "FROM innodb.EVENTS "
+                       "WHERE ID = '" +QString::number(eventID)+ "'");
+
+    groupID_query.next();
+
+    groupID = groupID_query.value(0).toInt();
+
+    return (groupID != 0);
+}
+
+void dashboard::printError(ErrorCode error_code)
+{
+    QMessageBox ErrorBox;
+    ErrorBox.setWindowTitle("Woah There!");
+    QString errorMsg, consoleMsg;
+
+    switch(error_code)
+    {
+        case EDIT_ERROR_UNAUTH_USER:
+        {
+            errorMsg = "Error: you can't change other's schedules.";
+            consoleMsg = "Modification failed: you can only modify events you own.";
+            break;
+        }
+        case DELETE_ERROR_UNAUTH_USER:
+        {
+            errorMsg = "Error: you can't delete other's schedules.";
+            consoleMsg = "Deletion failed: you can only delete events you own.";
+            break;
+        }
+        case ADD_ERROR_NO_GROUP_SELECTED:
+        {
+            errorMsg = "Error: Select a group you want to add a group event.";
+            consoleMsg = "Insertion failed : select group to add group event.";
+            break;
+        }
+        case EDIT_ERROR_INVALID_MODE:
+        {
+            errorMsg = "Error: you can't edit group event from personal calendar.";
+            consoleMsg = "Modification failed : group event must be edited from group calendar.";
+            break;
+        }
+        case DELETE_ERROR_INVALID_MODE:
+        {
+            errorMsg = "Error: you can't delete group event from personal calendar.";
+            consoleMsg = "Deletion failed : group event must be deleted from group calendar.";
+            break;
+        }
+        default:
+        {
+            errorMsg = "Error: action causes unknown error.";
+            consoleMsg = "Recent action has caused an error";
+        }
+    }
+
+    ErrorBox.setText(errorMsg);
+    ErrorBox.exec();
+    qDebug().noquote() << consoleMsg;
+}
+
+  /* Purpose: Checks to see if there is an event selected
  * Postconditions: Returns an error if the user did not select an event to
  * delete or edit the event.
  */
@@ -887,4 +810,20 @@ void dashboard::checkNoDateEvent()
         MsgBox.setWindowTitle("Where is your event?");
         MsgBox.setText("No Event was selected. Try Again.");
         MsgBox.exec();
+}
+
+void dashboard::on_calendarWidget_clicked(const QDate &date)
+{
+    if(isGroupMode)
+    {
+        disconnect(this, SIGNAL(updateTable(QTableView*,QString,QString)), displayObject, SLOT(updateEventsView(QTableView*, QString, QString)));
+        connect(this, SIGNAL(updateTable(QTableView*,QString,QString)), displayObject, SLOT(updateMemberEvents(QTableView*, QString, QString)));
+        emit updateTable(ui->eventsview, groupID, date.toString());
+    }
+    else
+    {
+        disconnect(this, SIGNAL(updateTable(QTableView*,QString,QString)), displayObject, SLOT(updateMemberEvents(QTableView*, QString, QString)));
+        connect(this, SIGNAL(updateTable(QTableView*,QString,QString)), displayObject, SLOT(updateEventsView(QTableView*, QString, QString)));
+        emit updateTable(ui->eventsview, myuser, date.toString());
+    }
 }
