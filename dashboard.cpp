@@ -16,6 +16,7 @@
 #include "mythread.h"
 #include "paintCell.h"
 #include "delete.h"
+#include "error.h"
 
 /*=================================================================================================================================*/
 //                                          class Dashboard-Specific Methods
@@ -87,6 +88,20 @@ dashboard::~dashboard()
     delete m_pRefreshThread;
 
     delete ui;
+}
+
+/* Purpose:         overrides the exit button for dashboard to add confirmation exit box.
+ * Postconditions:  message box popups up to confirm exit action.
+*/
+void dashboard::closeEvent(QCloseEvent * e) {
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Confirm",
+                                                                tr("Are you sure you want to exit?\n"),
+                                                                QMessageBox::Cancel | QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes) {
+        e->ignore();
+    } else {
+        e->accept();
+    }
 }
 
 
@@ -169,6 +184,64 @@ bool dashboard::getMode()
 }
 
 /*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|     Helper Methods     |*/
+/*'------------------------'*/
+
+/* Purpose:         Returns the total number of events occurring
+ *                  on a specified day
+ * Postconditions:  Depending on if on group mode determines the
+ *                      query executed
+ *                  Returns number of total events occurring on date
+ *                      target in type int
+*/
+// Purpose: returns the value of the amount of events on target
+//          owned by username
+int dashboard::countEvents(QDate target)
+{
+    QSqlQuery queryCount_query;
+
+    if(isGroupMode) {
+        queryCount_query.prepare("SELECT COUNT(*) "
+                                 "FROM innodb.EVENTS, innodb.USER_EVENTS "
+                                 "WHERE date = '" +target.toString()+ "' "
+                                 "AND ID = eventID "
+                                 "AND username 	IN(SELECT username "
+                                                 "FROM innodb.GROUP_MEMBERS "
+                                                 "WHERE groupID = '" +groupID+ "') ");
+    }
+    else {
+        queryCount_query.prepare("SELECT COUNT(*) "
+                        "FROM innodb.EVENTS, innodb.USER_EVENTS "
+                        "WHERE date = '" +target.toString()+
+                        "' AND ID = eventID "
+                        "AND username = '" +myuser+ "'");
+    }
+
+    queryCount_query.exec();
+    queryCount_query.next();
+
+    if(!queryCount_query.isActive())
+    {
+        qDebug() << queryCount_query.lastError().text();
+    }
+
+    return queryCount_query.value(0).toInt();
+}
+
+
+
+  /* Purpose:           Checks to see if there is an event selected
+   * Postconditions:    Returns an error if the user did not select an event to
+   *                    delete or edit the event.
+ */
+void dashboard::checkNoDateEvent()
+{
+        error::printError(DELETE_NO_DATE_SELECTED);
+}
+
+/*=================================================================================================================================*/
 //                                                          SLOTS
 /*=================================================================================================================================*/
 
@@ -215,7 +288,7 @@ void dashboard::on_addevents_clicked()
     */
     if(this->groupID == "0" && isGroupMode)
     {
-        printError(ADD_ERROR_NO_GROUP_SELECTED);
+        error::printError(ADD_ERROR_NO_GROUP_SELECTED);
 
         return;
     }
@@ -255,6 +328,10 @@ void dashboard::on_addevents_clicked()
 
         paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
     }
+    else
+    {
+        qDebug("Insertion of event canceled.");
+    }
 }
 
 /* Purpose:         Updates event information with user defined values in
@@ -284,7 +361,7 @@ void dashboard::on_editEvents_clicked()
     */
     if(isGroupEvent && !isGroupMode)
     {
-        printError(DELETE_ERROR_INVALID_MODE);
+        error::printError(DELETE_ERROR_INVALID_MODE);
 
         return;
     }
@@ -305,36 +382,45 @@ void dashboard::on_editEvents_clicked()
         */
         if(choice == QMessageBox::Save)
         {
-            QString Editdate = ui->dateEdit->date().toString();
+            QDate Editdate = ui->dateEdit->date();
             QString Editstart = ui->startTime->text();
             QString Editend = ui->endTime->text();
             QString Editdesc = ui->DescriptxtEdit->toPlainText();
+            QString Edityearweek;
             QSqlQuery query_update;
-
-            // Update event details
-            query_update.exec("UPDATE innodb.EVENTS "
-                              "SET date='"+Editdate+
-                              "',start='"+Editstart+
-                              "', end='"+Editend+
-                              "',description='"+Editdesc+
-                              "' WHERE ID='"+ID_Param+"'");
-
-            emit updateReminder(ui->reminders, myuser);
-
-            QDate modifyDate = ui->dateEdit->date();    // Store date modified in editEvent container
 
             /* IF date was changed
              *      Color cell appropriately
             */
-            if (originalDate != modifyDate)
+            if (originalDate != Editdate)
             {
-                /* if no more events today
+                int year = Editdate.year();
+                int week = Editdate.weekNumber();
+                Edityearweek = QString::number(year) + QString::number(week);
+                /* if this event is the only event on originalDate
                  *      paint originalDate white
-                 * paint modifyDate green
                  */
-                if(countEvents(originalDate, myuser) == 0)
+                if(countEvents(originalDate) == 1)
                      paintCell::paint(ui, originalDate, Qt::white);
             }
+
+            // Update event details
+            query_update.exec("UPDATE innodb.EVENTS "
+                              "SET date='"+Editdate.toString()+
+                              "',start='"+Editstart+
+                              "', end='"+Editend+
+                              "',description='"+Editdesc+
+                              "',yearweek='"+Edityearweek+
+                              "' WHERE ID='"+ID_Param+"'");
+
+            if(query_update.isActive()) {
+                qDebug().noquote() << "Modification of Event " +ID_Param+ " successful.";
+            }
+            else {
+                qDebug() << query_update.lastError().text();
+            }
+
+            emit updateReminder(ui->reminders, myuser);
 
             if(isGroupEvent || isGroupMode)
             {
@@ -348,15 +434,15 @@ void dashboard::on_editEvents_clicked()
             paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
             clearEditInfo();
         }
-        else
-        {
+        else {
             qDebug().noquote() << "Modification of Event " +ID_Param+ " canceled.";
         }
+
     }
     else
     {
        // Users cannot edit events that aren't theres
-       printError(EDIT_ERROR_UNAUTH_USER);
+       error::printError(EDIT_ERROR_UNAUTH_USER);
     }
 
 }
@@ -393,7 +479,7 @@ void dashboard::on_deleteEvents_clicked()
      *    Paint today's cell white
     */
 
-    if(countEvents(currDate, myuser) == 0)
+    if(countEvents(currDate) == 0)
         paintCell::paint(ui, currDate, Qt::white);     // paint back to default color
 
     clearEditInfo();                // clear edit info
@@ -455,6 +541,13 @@ void dashboard::on_loadonline_clicked()
                                    "FROM innodb.USERS "
                                    "WHERE status = 1");
 }
+
+/*=================================================================================================================================*/
+
+/*.------------------------.*/
+/*|      Table Views       |*/
+/*'------------------------'*/
+
 
 /* Purpose:         Initializes event information form when user clicks
  *                  an event in eventsview
@@ -602,10 +695,7 @@ void dashboard::on_messageBox_textChanged()
 
     // validation check if user pastes in input that is over 100.
     if (ui->messageBox->toPlainText().length() > MAX + 1) {
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Error");
-        MsgBox.setText("Your input is over the character limit.");
-        MsgBox.exec();
+        error::printError(TXTBOX_MAX_CHAR_REACHED);
 
         ui->messageBox->clear();
     }
@@ -635,10 +725,7 @@ void dashboard::on_DescriptxtEdit_textChanged()
 
     // validation check if user pastes in input that is over 100.
     if (ui->DescriptxtEdit->toPlainText().length() > MAX + 1) {
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Error");
-        MsgBox.setText("Your input is over the character limit.");
-        MsgBox.exec();
+        error::printError(TXTBOX_MAX_CHAR_REACHED);
 
         ui->DescriptxtEdit->clear();
     }
@@ -657,30 +744,16 @@ void dashboard::on_DescriptxtEdit_textChanged()
     }
 }
 
-/* Purpose:         overrides the exit button for dashboard to add confirmation exit box.
- * Postconditions:  message box popups up to confirm exit action.
-*/
-void dashboard::closeEvent(QCloseEvent * e) {
-    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Confirm",
-                                                                tr("Are you sure you want to exit?\n"),
-                                                                QMessageBox::Cancel | QMessageBox::Yes);
-    if (resBtn != QMessageBox::Yes) {
-        e->ignore();
-    } else {
-        e->accept();
-    }
-}
 /*=================================================================================================================================*/
 
 /*.------------------------.*/
 /*|        Calendar        |*/
 /*'------------------------'*/
 
-/* Purpose:         Updates eventsview and event info fields when date selected is
- *                  changed
- * Postconditions:  Updates eventsview to selected dates relevant events
- *                  If selected date has no events, event info is reset to default values
- *                  Else, filled with event info
+/* Purpose:         Emits signal to update relevant table views whenever
+ *                  a new calendar date cell is selected
+ * Postconditions:  Eventsview is updated to contain all events relevant
+ *                  to chosen cell date
 */
 void dashboard::on_calendarWidget_selectionChanged()
 {
@@ -698,120 +771,12 @@ void dashboard::on_calendarWidget_selectionChanged()
 
 }
 
-/* Purpose:             Disconnects group calendar connections
- * Preconditions:       Should be called when dashboard is in
- *                      personal mode (!isGroupMode)
- * Postconditions:      Calendar functionality returns to default
- *                      abilities: show only logged in user's events
- *                      when a calendar date is selected
+/* Purpose:         Emits signal to update relevant table views whenever
+ *                  a new calendar date cell is clicked
+ * Postconditions:  Determines calendar signal-slot connection based on mode
+ *                  Eventsview is updated to contain all events relevant
+ *                      to chosen cell date
 */
-void dashboard::resetGroupAttributes()
-{
-    resetStatus = true;
-    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
-    resetStatus = false;
-    groupID = "0";     // Reset groupID
-    groupName = "";
-}
-
-/*
- * Methods created to separate methods
-*/
-
-// Purpose: returns the value of the amount of events on target
-//          owned by username
-int dashboard::countEvents(QDate target, QString username)
-{
-    QSqlQuery queryCount_query;
-
-    queryCount_query.exec("SELECT COUNT(*) "
-                       "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                       "WHERE date = '" +target.toString()+
-                       "' AND ID = eventID "
-                       "AND username = '" +username+ "'");
-
-    queryCount_query.next();
-
-    return queryCount_query.value(0).toInt();
-}
-
-bool dashboard::isGroupEvent(int eventID, int &groupID)
-{
-    QSqlQuery groupID_query;
-
-    groupID_query.exec("SELECT groupID "
-                       "FROM innodb.EVENTS "
-                       "WHERE ID = '" +QString::number(eventID)+ "'");
-
-    groupID_query.next();
-
-    groupID = groupID_query.value(0).toInt();
-
-    return (groupID != 0);
-}
-
-void dashboard::printError(ErrorCode error_code)
-{
-    QMessageBox ErrorBox;
-    ErrorBox.setWindowTitle("Woah There!");
-    QString errorMsg, consoleMsg;
-
-    switch(error_code)
-    {
-        case EDIT_ERROR_UNAUTH_USER:
-        {
-            errorMsg = "Error: you can't change other's schedules.";
-            consoleMsg = "Modification failed: you can only modify events you own.";
-            break;
-        }
-        case DELETE_ERROR_UNAUTH_USER:
-        {
-            errorMsg = "Error: you can't delete other's schedules.";
-            consoleMsg = "Deletion failed: you can only delete events you own.";
-            break;
-        }
-        case ADD_ERROR_NO_GROUP_SELECTED:
-        {
-            errorMsg = "Error: Select a group you want to add a group event.";
-            consoleMsg = "Insertion failed : select group to add group event.";
-            break;
-        }
-        case EDIT_ERROR_INVALID_MODE:
-        {
-            errorMsg = "Error: you can't edit group event from personal calendar.";
-            consoleMsg = "Modification failed : group event must be edited from group calendar.";
-            break;
-        }
-        case DELETE_ERROR_INVALID_MODE:
-        {
-            errorMsg = "Error: you can't delete group event from personal calendar.";
-            consoleMsg = "Deletion failed : group event must be deleted from group calendar.";
-            break;
-        }
-        default:
-        {
-            errorMsg = "Error: action causes unknown error.";
-            consoleMsg = "Recent action has caused an error";
-        }
-    }
-
-    ErrorBox.setText(errorMsg);
-    ErrorBox.exec();
-    qDebug().noquote() << consoleMsg;
-}
-
-  /* Purpose: Checks to see if there is an event selected
- * Postconditions: Returns an error if the user did not select an event to
- * delete or edit the event.
- */
-void dashboard::checkNoDateEvent()
-{
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Where is your event?");
-        MsgBox.setText("No Event was selected. Try Again.");
-        MsgBox.exec();
-}
-
 void dashboard::on_calendarWidget_clicked(const QDate &date)
 {
     if(isGroupMode)
@@ -827,3 +792,23 @@ void dashboard::on_calendarWidget_clicked(const QDate &date)
         emit updateTable(ui->eventsview, myuser, date.toString());
     }
 }
+
+/* Purpose:             Resets all group calendar functionality/attributes
+ * Preconditions:       Should be called when dashboard is in
+ *                      personal mode (!isGroupMode)
+ * Postconditions:      Calendar functionality returns to default
+ *                      abilities: show only logged in user's events
+ *                      when a calendar date is selected
+*/
+void dashboard::resetGroupAttributes()
+{
+    resetStatus = true;
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,resetStatus,myuser,groupID,myconn);
+    resetStatus = false;
+    groupID = "0";     // Reset groupID
+    groupName = "";
+}
+
+
+
+

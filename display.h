@@ -12,12 +12,10 @@ class display : public QObject
     Q_OBJECT
 public:
     connection conn;
-    QTableView *table;
-    QString id;
-    QString selectedDateStr;
 
     display();
     display(connection &myconn);
+
 
 private:
     void resetValues();
@@ -27,7 +25,7 @@ public slots:
     void updateEventsView(QTableView *eventTable, QString username, QString date);
     void updateGroupsView(QTableView *groupTbl, QString username);
     void updateMemberEvents(QTableView *eventTable, QString groupID, QString date);
-    void updateGroupEvents(QTableView *eventTable, QString groupID);   // doesn't work
+    void updateGroupEvents(QTableView *eventTable, QString groupID);
     void updateMembersView(QTableView *memberTbl, QString groupID);
     void updateRemindersView(QTableView *reminderTbl, QString username);
     void updateBulletinsView(QTableView *bulletinTbl, QString groupID);

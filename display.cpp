@@ -6,9 +6,10 @@
 #include "connection.h"
 #include "display.h"
 
+// default constructor
 display::display(connection &myconn)
 {
-    conn = myconn;
+    display::conn = myconn;
 }
 
 /* Purpose:         Updates eventsview to display current date's events owned
