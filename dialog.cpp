@@ -183,7 +183,7 @@ void Dialog::on_buttonBox_accepted()
     }
 
     if (query.isActive()) {
-        qDebug("Inserted event into database.");
+        qDebug().noquote() << "Insertion of Event " + newEventID + " into database.";
     }
     else {
         qDebug() << query.lastError().text();
@@ -193,7 +193,9 @@ void Dialog::on_buttonBox_accepted()
     Dialog::close();
 }
 
-//PURPOSE: closes add events window when cancel is clicked.
+/* Purpose:         Closes dialog when cancel is clicked
+ * Postconditions:  this object is destroyed
+*/
 void Dialog::on_buttonBox_rejected()
 {
     this->reject();

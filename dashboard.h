@@ -12,15 +12,6 @@
 
 #include "display.h"
 
-//error codes
-typedef enum {
-    EDIT_ERROR_UNAUTH_USER = -1,
-    DELETE_ERROR_UNAUTH_USER = -2,
-    ADD_ERROR_NO_GROUP_SELECTED = -3,
-    EDIT_ERROR_INVALID_MODE = -4,
-    DELETE_ERROR_INVALID_MODE = -5
-}ErrorCode;
-
 namespace Ui {
 class dashboard;
 }
@@ -77,9 +68,7 @@ private slots:
     void resetGroupAttributes();
 
     // new methods created for simplification
-    int countEvents(QDate target, QString username);
-    bool isGroupEvent(int eventID, int &groupID);
-    void printError(ErrorCode error_code);
+    int countEvents(QDate target);
     void slot_refreshThread();
     void checkNoDateEvent();
     void on_DescriptxtEdit_textChanged();

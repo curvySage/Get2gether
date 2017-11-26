@@ -35,10 +35,10 @@ SOURCES += \
     dialog.cpp \
     grouppopup.cpp \
     mythread.cpp \
-    edit.cpp \
     display.cpp \
     delete.cpp \
     paintCell.cpp \
+    error.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -47,10 +47,10 @@ HEADERS += \
     dialog.h \
     grouppopup.h \
     mythread.h \
-    edit.h \
     display.h \
     delete.h \
     paintCell.h \
+    error.h
 
 FORMS += \
         mainwindow.ui \

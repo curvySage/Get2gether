@@ -1,3 +1,4 @@
+#include "error.h"
 #include "delete.h"
 
 Delete::Delete(){
@@ -24,12 +25,7 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
     */
     if(isGroupEvent && !isGroupMode)
     {
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Sorry, but you can't delete group event from personal calendar!");
-        MsgBox.exec();
-
-        qDebug("Deletion failed : group event must be deleted from group calendar.");
+        error::printError(DELETE_ERROR_INVALID_MODE);
 
         return 3;
     }
@@ -91,7 +87,7 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
                 // Print query status
                 if(query_delete.isActive())
                 {
-                    qDebug() << "Deletion of Event " + ID_Param + " successful.";
+                    qDebug().noquote() << "Deletion of Event " + ID_Param + " successful.";
                 }
                 else
                 {
@@ -108,10 +104,7 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
     else
     {
         // Output error message
-        QMessageBox MsgBox;
-        MsgBox.setWindowTitle("Woah There!");
-        MsgBox.setText("Sorry, but you can't delete other's schedules!");
-        MsgBox.exec();
+        error::printError(DELETE_ERROR_UNAUTH_USER);
         return 3;
     }
 }
