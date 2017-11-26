@@ -193,9 +193,7 @@ void Dialog::on_buttonBox_accepted()
     Dialog::close();
 }
 
-/* Purpose:         Closes dialog when cancel is clicked
- * Postconditions:  this object is destroyed
-*/
+//PURPOSE: closes add events window when cancel is clicked.
 void Dialog::on_buttonBox_rejected()
 {
     this->reject();

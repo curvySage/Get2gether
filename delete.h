@@ -11,6 +11,10 @@
 #include <QDate>
 #include "dashboard.h"
 #include "ui_dashboard.h"
+
+/* Class purpose:   Contains method that deletes an event from
+ *                  users' stored data
+*/
 class Delete
 {
 public:

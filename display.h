@@ -7,6 +7,10 @@
 
 #include "connection.h"
 
+/* Class purpose:   Contains slots relevant to updating
+ *                  a QTableView object in a dashboard
+ *                  object.
+*/
 class display : public QObject
 {
     Q_OBJECT

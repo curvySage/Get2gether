@@ -32,31 +32,31 @@ SOURCES += \
         mainwindow.cpp \
     dashboard.cpp \
     connection.cpp \
-    dialog.cpp \
     grouppopup.cpp \
     mythread.cpp \
     display.cpp \
     delete.cpp \
     paintCell.cpp \
-    error.cpp
+    error.cpp \
+    dialog.cpp
 
 HEADERS += \
         mainwindow.h \
     dashboard.h \
     connection.h \
-    dialog.h \
     grouppopup.h \
     mythread.h \
     display.h \
     delete.h \
     paintCell.h \
-    error.h
+    error.h \
+    dialog.h
 
 FORMS += \
         mainwindow.ui \
     dashboard.ui \
-    dialog.ui \
-    grouppopup.ui
+    grouppopup.ui \
+    dialog.ui
 
 RC_ICONS = get2gether_icon.ico
 
