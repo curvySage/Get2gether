@@ -520,7 +520,7 @@ void dashboard::on_groupsview_clicked(const QModelIndex &index)
 
     int rowidx = index.row();
 
-    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,true,myuser,groupID,myconn);          // paint calendar cells with events
+    paintCell::paintEvents(ui,ui->calendarWidget->selectedDate(),isGroupMode,true,myuser,groupID,myconn);          // resets calendar cell color to default
 
     groupID = ui->groupsview->model()->index(rowidx , 0).data().toString();
     groupName = ui->groupsview->model()->index(rowidx , 1).data().toString();

@@ -11,7 +11,6 @@
 
 // PURPOSE: constructor for creating a thread
 MyThread::MyThread(QObject * pObj) {
-    qDebug("MyThread : constructor");
     m_pReciever = pObj;
     m_exit = false;
     connect(this, SIGNAL(mysignal()), m_pReciever, SLOT(slot_refreshThread()));
