@@ -29,7 +29,6 @@ paintCell::paintCell()
 */
 void paintCell::paint(Ui::dashboard *ui,QDate date, QColor color)
 {
-    qDebug("paintCell : paint");
     QBrush brush;
     QTextCharFormat charFormat;
     brush.setColor(color);
@@ -41,7 +40,6 @@ void paintCell::paint(Ui::dashboard *ui,QDate date, QColor color)
 
 void paintCell::paintEvents(Ui::dashboard *ui,QDate date,bool isGroupMode,bool resetStatus,QString myuser,QString groupID,connection &newconn)
 {
-    qDebug("paintCell : paintEvents");
     QSqlQuery *query = new QSqlQuery(newconn.db);    // used to query DB
     bool isGroupEvent, isThisGroupEvent;
 
@@ -135,6 +133,6 @@ void paintCell::paintEvents(Ui::dashboard *ui,QDate date,bool isGroupMode,bool r
             else paint(ui,date, Qt::green);                                                 // paint parsed date cell green
         }
 
-    }//while(query->next());                                                    // move to next query result
+    }
 }
 

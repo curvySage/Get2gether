@@ -43,9 +43,7 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
         *      Query database removing selected event
         */
         if (choice == QMessageBox::Yes) {
-            QSqlQuery query_delete, query_count;
-            //QDate currDate = ui->dateEdit->date();
-            //int eventCount;
+            QSqlQuery query_delete;
 
             /* First, delete USER_EVENT eventID fk reference:
              * If not in group mode,
@@ -60,7 +58,17 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
                 query_delete.exec("DELETE FROM innodb.USER_EVENTS "
                                   "WHERE eventID ='" +ID_Param+
                                   "' AND username ='" +currentuser+ "'");
-                //updateEventsView();
+
+                // Print query status
+                if(query_delete.isActive())
+                {
+                    qDebug().noquote() << "Deletion of Event " + ID_Param + " successful.";
+                }
+                else
+                {
+                    qDebug() << query_delete.lastError().text();
+                }
+
                 return updateEvents;
             }
             else
@@ -68,37 +76,33 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
                 QSqlQuery selectMemberQ;
                 QString groupMember;
 
-                selectMemberQ.prepare("SELECT username "
+                selectMemberQ.exec("SELECT username "
                                       "FROM innodb.GROUP_MEMBERS "
                                       "WHERE groupID = '" +GroupID+ "'");
 
-                if(selectMemberQ.exec() && selectMemberQ.first())
+                while(selectMemberQ.next())
                 {
-                    do
-                    {
                      groupMember = selectMemberQ.value(0).toString();
                      query_delete.exec("DELETE FROM innodb.USER_EVENTS "
                                        "WHERE username = '" +groupMember+
                                        "' AND eventID = '" +ID_Param+ "'");
-                    }while(selectMemberQ.next());
                 }
 
                 // Print query status
                 if(query_delete.isActive())
                 {
-                    qDebug("Deletion successful.");
+                    qDebug() << "Deletion of Event " + ID_Param + " successful.";
                 }
                 else
                 {
                     qDebug() << query_delete.lastError().text();
                 }
-               // updateMemberEvents();
                 return updateMemebers;
            }
         }
-        if(choice == QMessageBox::No){
+        else {
+            qDebug().noquote() << "Deletion of Event " + ID_Param + " canceled.";
             return 3;
-            qDebug() << "I clicked the NO button";
         }
     }
     else
@@ -111,4 +115,3 @@ int Delete::Do_Delete(QString ID_Param, QString matchuser, QString currentuser, 
         return 3;
     }
 }
-

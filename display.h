@@ -31,7 +31,6 @@ public slots:
     void updateMembersView(QTableView *memberTbl, QString groupID);
     void updateRemindersView(QTableView *reminderTbl, QString username);
     void updateBulletinsView(QTableView *bulletinTbl, QString groupID);
-    void initValues(QTableView *tbl, QString newID, QString date);
 };
 
 #endif // DISPLAY_H

@@ -17,7 +17,6 @@ display::display(connection &myconn)
 */
 void display::updateEventsView(QTableView *eventTable, QString username, QString date)
 {
-    qDebug() << "display : updateEventsView() : " + username + " : " + date;
     displayResults(eventTable, "SELECT ID AS \"Event ID\", description AS \"Details\", date AS \"Date\", start AS \"Start\", end AS \"End\" "
                                        "FROM innodb.USER_EVENTS, innodb.EVENTS "
                                        "WHERE eventID = ID AND username ='" +username+
@@ -30,7 +29,6 @@ void display::updateEventsView(QTableView *eventTable, QString username, QString
 */
 void display::updateGroupsView(QTableView *groupTbl, QString username)
 {
-    qDebug("display : updateGroupsView()");
     displayResults(groupTbl, "SELECT ID AS \"ID\", name AS \"Name\" "
                                    "FROM innodb.GROUPS, innodb.GROUP_MEMBERS "
                                    "WHERE ID = groupID "
@@ -45,7 +43,6 @@ void display::updateGroupsView(QTableView *groupTbl, QString username)
 */
 void display::updateMemberEvents(QTableView *eventTable, QString groupID, QString date)
 {
-    qDebug() << "display : updateMemberEvents() : " + groupID + " : " + date;
     displayResults(eventTable, "SELECT eventID AS \"Event ID\", username AS \"Owner\", description AS \"Details\", "
                                         "date AS \"Date\", start AS \"Start\", end AS \"End\" "
                                    "FROM innodb.EVENTS, innodb.USER_EVENTS "
@@ -59,7 +56,6 @@ void display::updateMemberEvents(QTableView *eventTable, QString groupID, QStrin
 
 void display::updateMembersView(QTableView *memberTbl, QString groupID)
 {
-    qDebug() << "display : updateMembersView() : group " + groupID;
     displayResults(memberTbl, "SELECT username AS \"Members\" "
                                         "FROM innodb.GROUP_MEMBERS "
                                         "WHERE innodb.GROUP_MEMBERS.groupID = '" +groupID+ "'");
@@ -85,7 +81,6 @@ void display::updateGroupEvents(QTableView *eventTbl, QString groupID)
 */
 void display::updateRemindersView(QTableView *reminderTbl, QString username)
 {
-    qDebug("display : updateRemindersView()");
     // get the current year and week from currentDate.
     int week = QDate::currentDate().weekNumber();  //ex: 43
     int year = QDate::currentDate().year();        //ex: 2017
@@ -106,7 +101,6 @@ void display::updateRemindersView(QTableView *reminderTbl, QString username)
 */
 void display::updateBulletinsView(QTableView *bulletinTbl, QString groupID)
 {
-    qDebug() << "display : updateBulletinsView()";
     displayResults(bulletinTbl, "SELECT userID AS \"User\", message AS \"Message\" "
                                      "FROM innodb.BULLETINS where groupID = '"+groupID+"'");
     bulletinTbl->resizeRowsToContents();
@@ -123,9 +117,6 @@ void display::updateBulletinsView(QTableView *bulletinTbl, QString groupID)
 */
 void display::displayResults(QTableView * table, QString command)
 {
-    //Error: runs this an unnecessary amount of times
-    //QSqlQueryModel used to execute sql and traverse the results on a view table.
-
     QSqlQueryModel * modal = new QSqlQueryModel();
 
     QSqlQuery * query = new QSqlQuery(conn.db);
@@ -140,19 +131,4 @@ void display::displayResults(QTableView * table, QString command)
     {
         qDebug() << query->lastError().text();
     }
-
-    //resetValues();
-}
-
-void display::initValues(QTableView *tbl, QString newID, QString date)
-{
-    table = tbl;
-    id = newID;
-    selectedDateStr = date;
-}
-
-void display::resetValues()
-{
-    table = NULL;
-    id = selectedDateStr = "";
 }

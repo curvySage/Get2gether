@@ -73,9 +73,6 @@ private slots:
     void on_calendarWidget_selectionChanged();
     void on_messageBox_textChanged();
     void on_networktabs_currentChanged(int index);
-
-    void updateGroupEvents();
-
     void clearEditInfo();
     void resetGroupAttributes();
 
