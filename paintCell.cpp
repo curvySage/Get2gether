@@ -65,7 +65,7 @@ void paintCell::paintEvents(Ui::dashboard *ui,QDate date,bool isGroupMode,bool r
      *      Accumulate union select query based on current group
      *          member and selected calendar day
     */
-    if(!isGroupMode)
+   if(!isGroupMode)
     {
         query->prepare("SELECT date, groupID "
                        "FROM innodb.EVENTS, innodb.USER_EVENTS "
@@ -74,39 +74,7 @@ void paintCell::paintEvents(Ui::dashboard *ui,QDate date,bool isGroupMode,bool r
     }
     else
     {
-        QSqlQuery selectMemberQ;
-        QString groupMember, qResult;
-
-        selectMemberQ.prepare("SELECT username "
-                              "FROM innodb.GROUP_MEMBERS "
-                              "WHERE groupID = '" +groupID+
-                              "' AND username != '" +myuser+ "'");
-
-        qResult = "(SELECT date, groupID "
-                  "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                  "WHERE username = '" +myuser+ "' AND eventID = ID) ";
-
-        /* If member select query executes,
-         *      Grab each member's username
-         *      Accumulate union select query for current member
-         *          grabbing event date to paint
-        */
-        if(selectMemberQ.exec() && selectMemberQ.first())
-        {
-            do
-            {
-                groupMember = selectMemberQ.value(0).toString();
-                qResult += "UNION (SELECT date, groupID "
-                           "FROM innodb.EVENTS, innodb.USER_EVENTS "
-                           "WHERE username = '" +groupMember+
-                           "' AND eventID = ID) ";
-            }while(selectMemberQ.next());
-
-            qResult += "ORDER BY groupID";      // Order by groupID to have all group events at the end
-                                                //  of the query so that group events are painted cyan
-                                                //  even if personal events happen to be on the same day
-            query->prepare(qResult);            // Prepare paint query using accumulated query
-        }
+        query->prepare("SELECT date, groupID FROM innodb.EVENTS, innodb.USER_EVENTS WHERE eventID = ID AND username IN (SELECT username FROM innodb.GROUP_MEMBERS WHERE groupID = '" +groupID+ "') ORDER BY groupID");
     }
 
     query->exec();
