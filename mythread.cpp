@@ -36,7 +36,7 @@ void MyThread::performExit() {
 // PURPOSE: overrides the run function.
 void MyThread::run() {
     while (!m_exit) {
-        sleep(10);       // in seconds. msleep() for msecs.
+        sleep(2);       // in seconds. msleep() for msecs.
         emit mysignal();
     }
 }
